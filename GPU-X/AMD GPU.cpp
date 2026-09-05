@@ -1,6 +1,6 @@
 #include "AMD GPU.h"
 
-AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter) : GPU(pDXGIAdapter) {
+AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter, int index) : GPU(pDXGIAdapter, index) {
 	this->_whoIsMyDaddy = TypeOfGPU::AMD_GPU;
 
 }

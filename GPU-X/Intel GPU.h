@@ -6,7 +6,7 @@
 
 class Intel_GPU : public GPU {
 public:
-    Intel_GPU(IDXGIAdapter* pDXGIAdapter);
+    Intel_GPU(IDXGIAdapter* pDXGIAdapter, int index);
     
     void UpdateSensors();
 

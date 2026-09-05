@@ -14,6 +14,8 @@ int main() {
         std::wcout << "  * DriverVersion: " << i->GetDriverVersion() << std::endl;
         std::wcout << "  * DriverDate: " << i->GetDriverDate() << std::endl;
         std::wcout << "  * MemSize: " << i->GetMemSize() << " MB" << std::endl;
+        std::wcout << "  * D3D Version: " << i->GetDXMaxVersion() << std::endl;
+        std::wcout << "  * RayTracing: " << i->GetHasRayTracing() << std::endl;
         std::cout << std::endl;
     }
     return 0;

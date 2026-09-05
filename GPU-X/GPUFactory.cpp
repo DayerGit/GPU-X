@@ -17,19 +17,19 @@ std::vector<std::unique_ptr<GPU>> GPUFactory::LetsCreateGPUs() {
 
 		switch (adapterDesc.VendorId) {
 		case NVIDIA_VENDOR_ID: {
-			result.emplace_back(std::make_unique<NVIDIA_GPU>(pAdapter));
+			result.emplace_back(std::make_unique<NVIDIA_GPU>(pAdapter, i));
 			break;
 		}
 		case AMD_VENDOR_ID: {
-			result.emplace_back(std::make_unique<AMD_GPU>(pAdapter));
+			result.emplace_back(std::make_unique<AMD_GPU>(pAdapter, i));
 			break;
 		}
 		case INTEL_VENDOR_ID: {
-			result.emplace_back(std::make_unique<Intel_GPU>(pAdapter));
+			result.emplace_back(std::make_unique<Intel_GPU>(pAdapter, i));
 			break;
 		}
 		default: {
-			result.emplace_back(std::make_unique<GPU>(pAdapter));
+			result.emplace_back(std::make_unique<GPU>(pAdapter, i));
 			break;
 		}
 		}
