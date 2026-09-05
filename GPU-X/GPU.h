@@ -89,6 +89,8 @@ public:
 	bool GetHasResizableBAR() const { return this->_hasResizableBar; }
 
 	uint32_t GetMemSize() const { return this->_memSize; }
+
+	TypeOfGPU GetProducer() const { return this->_whoIsMyDaddy; }
 	
 	~GPU();
 

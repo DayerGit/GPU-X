@@ -22,7 +22,29 @@ int main() {
         std::wcout << "  * OpenCL: " << i->GetHasOpenCL() << std::endl;
         std::wcout << "  * OpenGL 4.6: " << i->GetHasOpenCL() << std::endl;
         std::wcout << "  * Resizable BAR: " << i->GetHasResizableBAR() << std::endl;
+        
+        switch (i->GetProducer()) {
+        case TypeOfGPU::INTEL_GPU: {
+            Intel_GPU* intelGPU = static_cast<Intel_GPU*>(i.get());
+            std::wcout << "  * BIOS Version: " << intelGPU->GetBIOSVersion() << std::endl;
+            std::wcout << "  * Memory Type: " << intelGPU->GetMemoryType() << std::endl;
+            std::wcout << "  * GPU Clock: " << intelGPU->GetCoreClock() << std::endl;
+            std::wcout << "  * GPU Default Clock: " << intelGPU->GetDefaultCoreClock() << std::endl;
+            std::wcout << "  * GPU Boost Clock: " << intelGPU->GetBoostCoreClock() << std::endl;
+            std::wcout << "  * Memory Clock: " << intelGPU->GetMemoryClock() << std::endl;
+            std::wcout << "  * Memory Default Clock: " << intelGPU->GetDefaultMemoryClock() << std::endl;
+            std::wcout << "  * Memory Boost Clock: " << intelGPU->GetBoostMemoryClock() << std::endl;
+            std::wcout << "  * GPU Power: " << intelGPU->GetCorePower() << std::endl;
+            std::wcout << "  * Fan Speed: " << intelGPU->GetFanSpeed() << std::endl;
+            std::wcout << "  * Bus Maximum: " << intelGPU->GetBusMaximum() << std::endl;
+            std::wcout << "  * Bus Current: " << intelGPU->GetBusCurrent() << std::endl;
+            break;
+        }
+        }
+
         std::cout << std::endl;
     }
+
+    system("pause");
     return 0;
 }

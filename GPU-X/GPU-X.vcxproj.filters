@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Файлы заголовков\Intel">
+      <UniqueIdentifier>{c5f14fa3-59c8-4948-a2a0-f084cc9985e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Intel">
+      <UniqueIdentifier>{cf214f41-610f-4bca-93af-a1f1ceec0300}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -33,6 +39,9 @@
     <ClCompile Include="Intel GPU.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Intel\cApiWrapper.cpp">
+      <Filter>Исходные файлы\Intel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GPU.h">
@@ -49,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="GPUFactory.h">
       <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Intel\igcl_api.h">
+      <Filter>Файлы заголовков\Intel</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

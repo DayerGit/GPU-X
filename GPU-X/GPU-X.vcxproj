@@ -102,10 +102,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>..\OpenCL-SDK-v2026.05.29-Win-x64\include;$(VULKAN_SDK)\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>dxgi.lib;setupapi.lib;opengl32.lib;cfgmgr32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,6 +131,7 @@
     <ClCompile Include="GPU.cpp" />
     <ClCompile Include="GPUFactory.cpp" />
     <ClCompile Include="Intel GPU.cpp" />
+    <ClCompile Include="Intel\cApiWrapper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NVIDIA GPU.cpp" />
   </ItemGroup>
@@ -137,6 +140,7 @@
     <ClInclude Include="GPU.h" />
     <ClInclude Include="GPUFactory.h" />
     <ClInclude Include="Intel GPU.h" />
+    <ClInclude Include="Intel\igcl_api.h" />
     <ClInclude Include="NVIDIA GPU.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
