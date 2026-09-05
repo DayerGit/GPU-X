@@ -20,6 +20,8 @@ int main() {
         std::wcout << "  * DirectML: " << i->GetHasDirectML() << std::endl;
         std::wcout << "  * VULKAN: " << i->GetHasVulkan() << std::endl;
         std::wcout << "  * OpenCL: " << i->GetHasOpenCL() << std::endl;
+        std::wcout << "  * OpenGL 4.6: " << i->GetHasOpenCL() << std::endl;
+        std::wcout << "  * Resizable BAR: " << i->GetHasResizableBAR() << std::endl;
         std::cout << std::endl;
     }
     return 0;

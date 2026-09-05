@@ -6,8 +6,8 @@
 
 GPU::GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance): _pDXGIAdapter(pDXGIAdapter), 
                                                 _whoIsMyDaddy(TypeOfGPU::UNKNOWN_GPU), _vkInstance(vkInstance),
-                                                _hasOpenCL(false), _hasCUDA(false), _hasDirectCompute(false), _hasDirectML(false), 
-                                                _hasVulkan(false), _hasRayTracing(false), _hasPhysX(false), _hasOGL4_6(false), 
+                                                _hasOpenCL(false), _hasDirectCompute(false), _hasDirectML(false), 
+                                                _hasVulkan(false), _hasRayTracing(false), _hasOGL4_6(false), _hasResizableBar(false),
                                                 _adapterLUID(AdapterLUID), _adapterIndexForD3D9(index), _memSize(0)
 {
     if (!pDXGIAdapter) return;
@@ -33,6 +33,37 @@ GPU::GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkI
     this->_directXMaxVersion = this->_GetDeviceD3DInfo();
     this->_hasVulkan = this->_CheckVulkan();
     this->_hasOpenCL = this->_CheckOpenCL();
+    this->_hasOGL4_6 = this->_CheckOpenGL();
+}
+
+void GPU::_CheckResizableBar(SP_DEVINFO_DATA devInfoData) {
+    LOG_CONF logConf = 0;
+    if (CM_Get_First_Log_Conf(&logConf, devInfoData.DevInst, ALLOC_LOG_CONF) == CR_SUCCESS) {
+        RES_DES resDes = 0;
+        if (CM_Get_Next_Res_Des(&resDes, logConf, ResType_Mem, nullptr, 0) == CR_SUCCESS) {
+
+            while (true) {
+                MEM_RESOURCE memData = {};
+                if (CM_Get_Res_Des_Data(resDes, &memData, sizeof(memData), 0) != CR_SUCCESS) break;
+
+                ULONG64 barSize = memData.MEM_Header.MD_Count;
+
+                if (barSize > 256 * 1024 * 1024) {
+                    this->_hasResizableBar = true;
+                    break;
+                }
+
+                RES_DES nextResDes = 0;
+                if (CM_Get_Next_Res_Des(&nextResDes, resDes, ResType_Mem, nullptr, 0) != CR_SUCCESS) {
+                    CM_Free_Res_Des_Handle(resDes);
+                    break;
+                }
+                CM_Free_Res_Des_Handle(resDes);
+                resDes = nextResDes;
+            }
+        }
+        CM_Free_Log_Conf_Handle(logConf);
+    }
 }
 
 void GPU::_FetchDriverInfo() {
@@ -43,7 +74,7 @@ void GPU::_FetchDriverInfo() {
     struct DevInfoListGuard {
         HDEVINFO handle;
         ~DevInfoListGuard() {
-            if (handle != INVALID_HANDLE_VALUE) 
+            if (handle != INVALID_HANDLE_VALUE)
                 SetupDiDestroyDeviceInfoList(handle);
         }
     } guard = { hDevInfo };
@@ -58,9 +89,12 @@ void GPU::_FetchDriverInfo() {
 
         this->_driverVersion = this->_GetDevicePropertyString(hDevInfo, &devInfoData, DEVPKEY_Device_DriverVersion, {});
         this->_driverDate = this->_GetDriverDate(hDevInfo, &devInfoData);
+
+        this->_CheckResizableBar(devInfoData);
         break;
     }
 }
+
 
 std::wstring GPU::_GetDevicePropertyString(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, const DEVPROPKEY& key1, const DEVPROPKEY& key2) {
     const DEVPROPKEY* keys[] = { &key1, &key2 };
@@ -307,7 +341,6 @@ bool GPU::_CheckVulkan() {
     }
 
     return false;
-
 }
 
 bool GPU::_CheckOpenCL() {
@@ -362,6 +395,71 @@ bool GPU::_CheckOpenCL() {
     }
 
     return false;
+}
+
+bool GPU::_CheckOpenGL() {
+    DISPLAY_DEVICEW ddw = { 0 };
+    ddw.cb = sizeof(ddw);
+
+    if (!EnumDisplayDevicesW(NULL, this->_adapterIndexForD3D9, &ddw, 0))
+        return false;
+
+    bool hasOGL46 = false;
+    HGLRC dummyContext = NULL;
+    HDC hDC = NULL;
+
+    if (ddw.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) {
+        hDC = CreateDCW(NULL, ddw.DeviceName, NULL, NULL);
+        if (!hDC) return false;
+
+        PIXELFORMATDESCRIPTOR pfd = { sizeof(PIXELFORMATDESCRIPTOR), 1 };
+        pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.cColorBits = 32;
+
+        int pixelFormat = ChoosePixelFormat(hDC, &pfd);
+        if (!pixelFormat || !SetPixelFormat(hDC, pixelFormat, &pfd)) {
+            DeleteDC(hDC);
+            return false;
+        }
+
+        dummyContext = wglCreateContext(hDC);
+        if (!dummyContext) {
+            DeleteDC(hDC);
+            return false;
+        }
+
+        if (!wglMakeCurrent(hDC, dummyContext)) {
+            wglDeleteContext(dummyContext);
+            DeleteDC(hDC);
+            return false;
+        }
+
+        PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB =
+            (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+
+        if (wglCreateContextAttribsARB) {
+            int attribs[] = {
+                WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+                WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+                WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                0
+            };
+
+            HGLRC gl46Context = wglCreateContextAttribsARB(hDC, NULL, attribs);
+            if (gl46Context) {
+                wglDeleteContext(gl46Context);
+                hasOGL46 = true;
+            }
+        }
+
+        wglMakeCurrent(NULL, NULL); 
+    }
+
+    if (dummyContext) wglDeleteContext(dummyContext);
+    if (hDC) DeleteDC(hDC);
+
+    return hasOGL46;
 }
 
 GPU::~GPU() {

@@ -13,6 +13,7 @@ public:
     ~NVIDIA_GPU();
 
 private:
+    bool _hasCUDA, _hasPhysX;
     struct {
         uint32_t clock;
         int32_t  temperature;
