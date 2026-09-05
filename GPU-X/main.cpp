@@ -16,6 +16,10 @@ int main() {
         std::wcout << "  * MemSize: " << i->GetMemSize() << " MB" << std::endl;
         std::wcout << "  * D3D Version: " << i->GetDXMaxVersion() << std::endl;
         std::wcout << "  * RayTracing: " << i->GetHasRayTracing() << std::endl;
+        std::wcout << "  * DirectCompute: " << i->GetHasDirectCompute() << std::endl;
+        std::wcout << "  * DirectML: " << i->GetHasDirectML() << std::endl;
+        std::wcout << "  * VULKAN: " << i->GetHasVulkan() << std::endl;
+        std::wcout << "  * OpenCL: " << i->GetHasOpenCL() << std::endl;
         std::cout << std::endl;
     }
     return 0;

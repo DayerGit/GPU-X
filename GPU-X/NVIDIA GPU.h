@@ -6,7 +6,7 @@
 
 class NVIDIA_GPU : public GPU {
 public:
-    NVIDIA_GPU(IDXGIAdapter* pDXGIAdapter, int index);
+    NVIDIA_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance);
 
     void UpdateSensors();
 

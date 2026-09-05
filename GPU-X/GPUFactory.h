@@ -17,5 +17,9 @@ public:
     ~GPUFactory();
     
 private:
-    IDXGIFactory6* _pDXGIFactory = nullptr;
+    IDXGIFactory* _pDXGIFactory = nullptr;
+
+    VkInstance _vkInstance = VK_NULL_HANDLE;
+    PFN_vkCreateInstance _pfnCreateInstanceProcAddr = nullptr;
+    PFN_vkDestroyInstance _pfnDestroyInstanceProcAddr = nullptr;
 };

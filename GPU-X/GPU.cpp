@@ -4,8 +4,12 @@
 #include "GPU.h"
 
 
-GPU::GPU(IDXGIAdapter* pDXGIAdapter, int index): _pDXGIAdapter(pDXGIAdapter), _whoIsMyDaddy(TypeOfGPU::UNKNOWN_GPU), 
-                                                 _hasVulkan(false), _hasRayTracing(false), _adapterIndex(index) {
+GPU::GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance): _pDXGIAdapter(pDXGIAdapter), 
+                                                _whoIsMyDaddy(TypeOfGPU::UNKNOWN_GPU), _vkInstance(vkInstance),
+                                                _hasOpenCL(false), _hasCUDA(false), _hasDirectCompute(false), _hasDirectML(false), 
+                                                _hasVulkan(false), _hasRayTracing(false), _hasPhysX(false), _hasOGL4_6(false), 
+                                                _adapterLUID(AdapterLUID), _adapterIndexForD3D9(index), _memSize(0)
+{
     if (!pDXGIAdapter) return;
 
     IDXGIAdapter1* pAdapter1 = nullptr;
@@ -26,7 +30,9 @@ GPU::GPU(IDXGIAdapter* pDXGIAdapter, int index): _pDXGIAdapter(pDXGIAdapter), _w
 
     this->_FetchDriverInfo();
 
-    this->_directXMaxVersion = this->_GetDeviceD3DMaxVersion();
+    this->_directXMaxVersion = this->_GetDeviceD3DInfo();
+    this->_hasVulkan = this->_CheckVulkan();
+    this->_hasOpenCL = this->_CheckOpenCL();
 }
 
 void GPU::_FetchDriverInfo() {
@@ -111,7 +117,26 @@ std::wstring GPU::_DXEnumToString(D3D_FEATURE_LEVEL level) {
     }
 }
 
-std::wstring GPU::_GetDeviceD3DMaxVersion() {
+void GPU::_GetDMLInfo(ID3D12Device* pD3D12Device) {
+    HMODULE hDirectML = LoadLibraryA("directml.dll");
+    if (hDirectML) {
+        IDMLDevice* pDMLDevice = nullptr;
+
+        DMLCreateDevice_t dmlCreateDevice = (DMLCreateDevice_t)GetProcAddress(hDirectML, "DMLCreateDevice");
+        if (dmlCreateDevice) {
+            HRESULT hRes = dmlCreateDevice(pD3D12Device, DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(&pDMLDevice));
+
+            if (SUCCEEDED(hRes)) {
+                this->_hasDirectML = true;
+                pDMLDevice->Release();
+            }
+        }
+
+        FreeLibrary(hDirectML);
+    }
+}
+
+std::wstring GPU::_GetDeviceD3DInfo() {
     HMODULE hModule;
 
     hModule = LoadLibraryA("d3d12.dll");
@@ -130,6 +155,9 @@ std::wstring GPU::_GetDeviceD3DMaxVersion() {
                     pD3D12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5));
 
                     this->_hasRayTracing = options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+                    this->_hasDirectCompute = true;
+
+                    this->_GetDMLInfo(pD3D12Device);
 
                     pD3D12Device->Release();
                     return this->_DXEnumToString(levelsToCheck[i]);
@@ -149,11 +177,22 @@ std::wstring GPU::_GetDeviceD3DMaxVersion() {
                                              ARRAYSIZE(levelsToCheck), D3D11_SDK_VERSION, &pD3D11Device, &maxSupportedLevel, 0);
 
             if (SUCCEEDED(hRes)) {
+                if (maxSupportedLevel >= D3D_FEATURE_LEVEL_11_0) this->_hasDirectCompute = true;
+                else if (maxSupportedLevel >= D3D_FEATURE_LEVEL_10_0 && maxSupportedLevel <= D3D_FEATURE_LEVEL_10_1) {
+                    D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options = {};
+                    pD3D11Device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options));
+
+                    this->_hasDirectCompute = options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x;
+                }
+                else this->_hasDirectCompute = false;
+
                 pD3D11Device->Release();
                 return this->_DXEnumToString(maxSupportedLevel);
             }
         }
     }
+
+    this->_hasDirectCompute = false;
 
     hModule = LoadLibraryA("d3d10_1.dll");
     if (hModule) {
@@ -194,7 +233,7 @@ std::wstring GPU::_GetDeviceD3DMaxVersion() {
             IDirect3D9* pD3D9 = d3d9Create(D3D_SDK_VERSION);
             if (pD3D9) {
                 D3DCAPS9 caps;
-                HRESULT hRes = pD3D9->GetDeviceCaps(this->_adapterIndex, D3DDEVTYPE_HAL, &caps);
+                HRESULT hRes = pD3D9->GetDeviceCaps(this->_adapterIndexForD3D9, D3DDEVTYPE_HAL, &caps);
                 if (SUCCEEDED(hRes)) {
                     DWORD majorShader = (caps.PixelShaderVersion & 0x0000FF00) >> 8;
                     DWORD minorShader = (caps.PixelShaderVersion & 0x000000FF);
@@ -218,6 +257,111 @@ std::wstring GPU::_GetDeviceD3DMaxVersion() {
     }
 
     return L"UNKNOWN";
+}
+
+bool GPU::_CheckVulkan() {
+    if (this->_vkInstance == VK_NULL_HANDLE) 
+        return false;
+
+    HMODULE hModule;
+
+    hModule = LoadLibraryA("vulkan-1.dll");
+    if (!hModule) return false;
+
+    PFN_vkEnumeratePhysicalDevices pfnEnumeratePhysicalDevicesProcAddr = (PFN_vkEnumeratePhysicalDevices)GetProcAddress(hModule, 
+                                                                            "vkEnumeratePhysicalDevices");
+    PFN_vkGetPhysicalDeviceProperties pfnGetPhysicalDevicePropertiesProcAddr = (PFN_vkGetPhysicalDeviceProperties)GetProcAddress(hModule, 
+                                                                                "vkGetPhysicalDeviceProperties");
+    PFN_vkGetPhysicalDeviceProperties2 pfnGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)GetProcAddress(hModule, 
+                                                                            "vkGetPhysicalDeviceProperties2");
+    if (!pfnGetPhysicalDeviceProperties2)
+        pfnGetPhysicalDeviceProperties2 = (PFN_vkGetPhysicalDeviceProperties2)GetProcAddress(hModule, "vkGetPhysicalDeviceProperties2KHR");
+
+    if (!(pfnEnumeratePhysicalDevicesProcAddr && pfnGetPhysicalDevicePropertiesProcAddr && pfnGetPhysicalDeviceProperties2)) return false;
+
+    uint32_t deviceCount = 0;
+    pfnEnumeratePhysicalDevicesProcAddr(this->_vkInstance, &deviceCount, nullptr);
+    if (deviceCount == 0) return false;
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    pfnEnumeratePhysicalDevicesProcAddr(this->_vkInstance, &deviceCount, devices.data());
+
+    for (const auto& device : devices) {
+        VkPhysicalDeviceProperties deviceProperties;
+        pfnGetPhysicalDevicePropertiesProcAddr(device, &deviceProperties);
+
+        VkPhysicalDeviceIDProperties deviceIDProperties{};
+        deviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+        deviceIDProperties.pNext = nullptr;
+
+        VkPhysicalDeviceProperties2 deviceProperties2{};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &deviceIDProperties;
+
+        pfnGetPhysicalDeviceProperties2(device, &deviceProperties2);
+
+        if (deviceIDProperties.deviceLUIDValid) {
+            if (!memcmp(&this->_adapterLUID, deviceIDProperties.deviceLUID, sizeof(LUID))) 
+                return true;
+        }
+    }
+
+    return false;
+
+}
+
+bool GPU::_CheckOpenCL() {
+    HMODULE hModule;
+
+    hModule = LoadLibraryA("OpenCL.dll");
+    if (!hModule) return false;
+
+    clGetPlatformIDs_t _clGetPlatformIDs = (clGetPlatformIDs_t)GetProcAddress(hModule, "clGetPlatformIDs");
+    clGetDeviceIDs_t _clGetDeviceIDs = (clGetDeviceIDs_t)GetProcAddress(hModule, "clGetDeviceIDs");
+    clGetDeviceInfo_t _clGetDeviceInfo = (clGetDeviceInfo_t)GetProcAddress(hModule, "clGetDeviceInfo");
+
+    if (!(_clGetPlatformIDs && _clGetDeviceIDs && _clGetDeviceInfo)) return false;
+
+    cl_uint numPlatforms = 0;
+    _clGetPlatformIDs(0, nullptr, &numPlatforms);
+    if (!numPlatforms) return false;
+
+    std::vector<cl_platform_id> platforms(numPlatforms);
+    _clGetPlatformIDs(numPlatforms, platforms.data(), nullptr);
+
+    for (cl_uint i = 0; i < numPlatforms; i++) {
+        cl_uint numDevices = 0;
+        cl_int err = _clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, nullptr, &numDevices);
+
+        if (err != CL_SUCCESS || !numDevices) continue;
+
+        std::vector<cl_device_id> devices(numDevices);
+        _clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, numDevices, devices.data(), nullptr);
+
+        for (cl_uint j = 0; j < numDevices; ++j) {
+            cl_device_id dev = devices[j];
+
+            cl_bool luidValid = CL_FALSE;
+            err = _clGetDeviceInfo(dev, CL_DEVICE_LUID_VALID, sizeof(cl_bool), &luidValid, nullptr);
+
+            if (err != CL_SUCCESS) {
+                _clGetDeviceInfo(dev, CL_DEVICE_LUID_VALID_KHR, sizeof(cl_bool), &luidValid, nullptr);
+            }
+
+            if (luidValid) {
+                cl_uchar LUID[CL_LUID_SIZE] = { 0 };
+                err = _clGetDeviceInfo(dev, CL_DEVICE_LUID, CL_LUID_SIZE, &LUID, nullptr);
+                if (err != CL_SUCCESS) {
+                    _clGetDeviceInfo(dev, CL_DEVICE_LUID_KHR, CL_LUID_SIZE, &LUID, nullptr);
+                }
+
+                if (!memcmp(&this->_adapterLUID, LUID, sizeof(LUID)))
+                    return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 GPU::~GPU() {
