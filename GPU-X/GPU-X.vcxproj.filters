@@ -19,6 +19,9 @@
     <Filter Include="Исходные файлы\Intel">
       <UniqueIdentifier>{cf214f41-610f-4bca-93af-a1f1ceec0300}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\NVIDIA">
+      <UniqueIdentifier>{3e0233e0-d083-4d50-8d28-62e325fbe044}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -61,6 +64,12 @@
     </ClInclude>
     <ClInclude Include="Intel\igcl_api.h">
       <Filter>Файлы заголовков\Intel</Filter>
+    </ClInclude>
+    <ClInclude Include="NVIDIA\nvapi.h">
+      <Filter>Файлы заголовков\NVIDIA</Filter>
+    </ClInclude>
+    <ClInclude Include="NVIDIA\nvapi_common.h">
+      <Filter>Файлы заголовков\NVIDIA</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

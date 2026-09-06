@@ -60,7 +60,6 @@ private:
         std::wstring version;
     } BIOS;
 
-private:
     ctl_api_handle_t _api_handle = nullptr;
     ctl_device_adapter_handle_t _device_adapter_handle;
 

@@ -40,11 +40,27 @@ int main() {
             std::wcout << "  * Bus Current: " << intelGPU->GetBusCurrent() << std::endl;
             break;
         }
+        case TypeOfGPU::NVIDIA_GPU: {
+            NVIDIA_GPU* NvidiaGPU = static_cast<NVIDIA_GPU*>(i.get());
+            std::wcout << "  * BIOS Version: " << NvidiaGPU->GetBIOSVersion() << std::endl;
+            std::wcout << "  * Bus Maximum: " << NvidiaGPU->GetBusMaximum() << std::endl;
+            std::wcout << "  * Bus Current: " << NvidiaGPU->GetBusCurrent() << std::endl;
+            std::wcout << "  * Memory Type: " << NvidiaGPU->GetMemoryType() << std::endl;
+
+            std::wcout << "  * Fan Speed: " << std::endl;
+            const auto& fanSpeed = NvidiaGPU->GetFanSpeed();
+            for (int i = 0; i < fanSpeed.size(); i++) {
+                std::wcout << "    - Fan #" << i+1 << ": " << fanSpeed[i] << std::endl;
+
+            }
+
+            break;
+        }
         }
 
         std::cout << std::endl;
     }
 
-    system("pause");
+    //system("pause");
     return 0;
 }
