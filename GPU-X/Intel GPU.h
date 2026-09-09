@@ -20,7 +20,6 @@ public:
     double GetCoreClock() const { return this->Core.clock; }
     double GetDefaultCoreClock() const { return this->Core.defaultClock; }
     double GetBoostCoreClock() const { return this->Core.boost; }
-    double GetCorePower() const { return this->Core.power; }
 
     double GetDefaultMemoryClock() const { return this->Memory.defaultClock; }
     double GetBoostMemoryClock() const { return this->Memory.boost; }
@@ -36,7 +35,6 @@ public:
 private:
     struct {
         double clock, defaultClock, boost;        
-        double power;        
         int8_t temperature;  
         int8_t voltage;
     } Core;
@@ -62,8 +60,6 @@ private:
 
     ctl_api_handle_t _api_handle = nullptr;
     ctl_device_adapter_handle_t _device_adapter_handle;
-
-    double _last_energy, _last_timestamp;
 
     bool _GetDeviceHandle();
 

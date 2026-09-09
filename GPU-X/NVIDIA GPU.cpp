@@ -15,6 +15,14 @@ NVIDIA_GPU::NVIDIA_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, 
 	this->_FillBusInfo();
 	this->_FillFanInfo();
 	this->_FillMemoryInfo();
+	this->_FillCoreInfo();
+	this->_FillCUDAPhysXInfo();
+}
+
+void NVIDIA_GPU::UpdateSensors() {
+	this->_FillFanInfo();
+	this->_FillMemoryInfo();
+	this->_FillCoreInfo();
 }
 
 bool NVIDIA_GPU::_LoadLib() {
@@ -39,11 +47,11 @@ bool NVIDIA_GPU::_LoadLib() {
 	this->_NvAPI_GPU_GetAllClockFrequencies = (NvAPI_GPU_GetAllClockFrequencies_t)this->_NvAPI_QueryInterface(NvAPI_GPU_GetAllClockFrequencies_ID);
 	if (!this->_NvAPI_GPU_GetAllClockFrequencies) return false;
 
+	this->_NvAPI_GPU_GetDynamicPstatesInfoEx = (NvAPI_GPU_GetDynamicPstatesInfoEx_t)this->_NvAPI_QueryInterface(NvAPI_GPU_GetDynamicPstatesInfoEx_ID);
+	if (!this->_NvAPI_GPU_GetDynamicPstatesInfoEx) return false;
+
 	this->_NvAPI_GPU_GetPstates20 = (NvAPI_GPU_GetPstates20_t)this->_NvAPI_QueryInterface(NvAPI_GPU_GetPstates20_ID);
 	if (!this->_NvAPI_GPU_GetPstates20) return false;
-
-	this->_NvAPI_GPU_ClientPowerTopologyGetStatus = (NvAPI_GPU_ClientPowerTopologyGetStatus_t)this->_NvAPI_QueryInterface(NvAPI_GPU_ClientPowerTopologyGetStatus_ID);
-	if (!this->_NvAPI_GPU_ClientPowerTopologyGetStatus) return false;
 
 	this->_NvAPI_GPU_GetThermalSettings = (NvAPI_GPU_GetThermalSettings_t)this->_NvAPI_QueryInterface(NvAPI_GPU_GetThermalSettings_ID);
 	if (!this->_NvAPI_GPU_GetThermalSettings) return false;
@@ -71,6 +79,9 @@ bool NVIDIA_GPU::_LoadLib() {
 
 	this->_NvAPI_GPU_GetPCIEInfo = (NvAPI_GPU_GetPCIEInfo_t)this->_NvAPI_QueryInterface(NvAPI_GPU_GetPCIEInfo_ID);
 	if (!this->_NvAPI_GPU_GetPCIEInfo) return false;
+
+	this->_NvAPI_GPU_CudaEnumComputeCapableGpus = (NvAPI_GPU_CudaEnumComputeCapableGpus_t)this->_NvAPI_QueryInterface(NvAPI_GPU_CudaEnumComputeCapableGpus_ID);
+	if (!this->_NvAPI_GPU_CudaEnumComputeCapableGpus) return false;
 
 	this->_NvAPI_Unload = (NvAPI_Unload_t)this->_NvAPI_QueryInterface(NvAPI_Unload_ID);
 	if (!this->_NvAPI_Unload) return false;
@@ -214,10 +225,92 @@ std::wstring GetMemoryTypeStr(unsigned int ramType) {
 	}
 }
 
+int32_t NVIDIA_GPU::_GetClock(NV_GPU_PUBLIC_CLOCK_ID clockID, NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE clockType) {
+	NV_GPU_CLOCK_FREQUENCIES clocks = { 0 };
+	clocks.version = NV_GPU_CLOCK_FREQUENCIES_VER;
+	clocks.ClockType = clockType;
+
+	NvAPI_Status result = this->_NvAPI_GPU_GetAllClockFrequencies(this->_physGpuHandle, &clocks);
+
+	if (result == NVAPI_OK) 
+		if (clocks.domain[clockID].bIsPresent)
+			return clocks.domain[clockID].frequency / 1000;
+	
+	return 0.0;
+}
+
+void NVIDIA_GPU::_FillCoreInfo() {
+	this->Core.defaultClock = this->_GetClock(NVAPI_GPU_PUBLIC_CLOCK_GRAPHICS, NV_GPU_CLOCK_FREQUENCIES_BASE_CLOCK);
+	this->Core.boost = this->_GetClock(NVAPI_GPU_PUBLIC_CLOCK_GRAPHICS, NV_GPU_CLOCK_FREQUENCIES_BOOST_CLOCK);
+	this->Core.clock = this->_GetClock(NVAPI_GPU_PUBLIC_CLOCK_GRAPHICS, NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ);
+
+	NV_GPU_THERMAL_SETTINGS thermalSettings = { 0 };
+	thermalSettings.version = NV_GPU_THERMAL_SETTINGS_VER;
+	NvAPI_Status result = this->_NvAPI_GPU_GetThermalSettings(this->_physGpuHandle, 0, &thermalSettings);
+
+	if (result == NVAPI_OK) 
+		this->Core.temperature = thermalSettings.sensor[0].currentTemp;
+
+	NV_GPU_CLIENT_VOLT_RAILS_STATUS status = { 0 };
+	status.version = NV_GPU_CLIENT_VOLT_RAILS_STATUS_VER;
+
+	result = this->_NvAPI_GPU_ClientVoltRailsGetStatus(this->_physGpuHandle, &status);
+
+	if (result == NVAPI_OK)
+		this->Core.voltage = status.data[9] / 1000000.0f;
+}
+
 void NVIDIA_GPU::_FillMemoryInfo() {
 	NvU32 ramType = 0;
 	this->_NvAPI_GPU_GetRamType(this->_physGpuHandle, &ramType);
 	this->Memory.memoryType = GetMemoryTypeStr(ramType);
+
+	this->Memory.defaultClock = this->_GetClock(NVAPI_GPU_PUBLIC_CLOCK_MEMORY, NV_GPU_CLOCK_FREQUENCIES_BASE_CLOCK);
+	this->Memory.boost = this->_GetClock(NVAPI_GPU_PUBLIC_CLOCK_MEMORY, NV_GPU_CLOCK_FREQUENCIES_BOOST_CLOCK);
+	this->Memory.clock = this->_GetClock(NVAPI_GPU_PUBLIC_CLOCK_MEMORY, NV_GPU_CLOCK_FREQUENCIES_CURRENT_FREQ);
+
+	int dev = 1;
+
+	switch (ramType) {
+	case NV_RAM_GDDR5:
+	case NV_RAM_GDDR5X: {
+		dev = 2;
+		break;
+	}
+	case NV_RAM_GDDR6: 
+	case NV_RAM_GDDR6X: {
+		dev = 4;
+		break;
+	}
+	case NV_RAM_GDDR7: {
+		dev = 8;
+		break;
+	}
+	default: break;
+	}
+
+	this->Memory.defaultClock /= dev;
+	this->Memory.boost /= dev;
+	this->Memory.clock /= dev;
+}
+
+void NVIDIA_GPU::_FillCUDAPhysXInfo() {
+	NV_COMPUTE_GPU_TOPOLOGY_V1 topo = { 0 };
+	topo.version = NV_COMPUTE_GPU_TOPOLOGY_VER1;
+
+	NvAPI_Status result = this->_NvAPI_GPU_CudaEnumComputeCapableGpus(&topo);
+	if (result != NVAPI_OK || !topo.gpuCount) return;
+
+	for (NvU32 i = 0; i < topo.gpuCount; i++) {
+		if (topo.computeGpus[i].hPhysicalGpu != this->_physGpuHandle) continue;
+
+		const NvU32 flags = topo.computeGpus[i].flags;
+
+		this->_hasCUDA = (flags & NV_COMPUTE_GPU_TOPOLOGY_CUDA_DISABLED) == 0;
+		this->_hasPhysX = (flags & NV_COMPUTE_GPU_TOPOLOGY_PHYSICS_CAPABLE) != 0;
+
+		break;
+	}
 }
 
 NVIDIA_GPU::~NVIDIA_GPU() {

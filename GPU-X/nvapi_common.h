@@ -11,19 +11,16 @@ using NvAPI_Initialize_t = NvAPI_Status(__cdecl*)();
 using NvAPI_EnumPhysicalGPUs_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle nvGPUHandle[NVAPI_MAX_PHYSICAL_GPUS], NvU32* pGpuCount);
 
 #define NvAPI_GPU_GetAllClockFrequencies_ID 0xDCB616C3
-using NvAPI_GPU_GetAllClockFrequencies_t = NvAPI_Status(__cdecl*)(int hPhysicalGpu, void* pClkFreqs);
+using NvAPI_GPU_GetAllClockFrequencies_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle hPhysicalGPU, NV_GPU_CLOCK_FREQUENCIES* pClkFreqs);
+
+#define NvAPI_GPU_GetDynamicPstatesInfoEx_ID 0x60DED2ED
+using NvAPI_GPU_GetDynamicPstatesInfoEx_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle hPhysicalGPU, NV_GPU_DYNAMIC_PSTATES_INFO_EX* pDynamicPstatesInfoEx);
 
 #define NvAPI_GPU_GetPstates20_ID 0x6FF81213
-using NvAPI_GPU_GetPstates20_t = NvAPI_Status(__cdecl*)(int hPhysicalGpu, void* pPstatesInfo);
-
-#define NvAPI_GPU_ClientPowerTopologyGetStatus_ID 0xEDCF624E
-using NvAPI_GPU_ClientPowerTopologyGetStatus_t = NvAPI_Status(__cdecl*)(int hPhysicalGpu, void* pPowerTopologyStatus);
+using NvAPI_GPU_GetPstates20_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_PERF_PSTATES20_INFO* pPstatesInfo);
 
 #define NvAPI_GPU_GetThermalSettings_ID 0xE3640A56
-using NvAPI_GPU_GetThermalSettings_t = NvAPI_Status(__cdecl*)(int hPhysicalGpu, void* pThermalSettings);
-
-#define NvAPI_GPU_ClientVoltRailsGetStatus_ID 0x465F9BCF
-using NvAPI_GPU_ClientVoltRailsGetStatus_t = NvAPI_Status(__cdecl*)(int hPhysicalGpu, void* pVoltRailsStatus);
+using NvAPI_GPU_GetThermalSettings_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle hPhysicalGpu, NvU32 sensorIndex, NV_GPU_THERMAL_SETTINGS* pThermalSettings);
 
 #define NvAPI_GPU_GetVbiosVersionString_ID 0xA561FD7D
 using NvAPI_GPU_GetVbiosVersionString_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle hPhysicalGpu, NvAPI_ShortString szBiosRevision);
@@ -114,7 +111,20 @@ typedef enum {
 	NV_RAM_HBM3E = 18  
 } NV_GPU_RAM_TYPE;
 
-
-
 #define NvAPI_GPU_GetRamType_ID 0x57F7CAAC
 using NvAPI_GPU_GetRamType_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle, NvU32*);
+
+#pragma pack(push, 1)
+typedef struct {
+	NvU32 version;
+	NvU32 data[18];
+} NV_GPU_CLIENT_VOLT_RAILS_STATUS;
+#pragma pack(pop)
+
+#define NV_GPU_CLIENT_VOLT_RAILS_STATUS_VER  MAKE_NVAPI_VERSION(NV_GPU_CLIENT_VOLT_RAILS_STATUS, 1)
+
+#define NvAPI_GPU_ClientVoltRailsGetStatus_ID 0x465F9BCF
+using NvAPI_GPU_ClientVoltRailsGetStatus_t = NvAPI_Status(__cdecl*)(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_CLIENT_VOLT_RAILS_STATUS* pStatus);
+
+#define NvAPI_GPU_CudaEnumComputeCapableGpus_ID  0x5786CC6E
+using NvAPI_GPU_CudaEnumComputeCapableGpus_t = NvAPI_Status(__cdecl*)(NV_COMPUTE_GPU_TOPOLOGY_V1* pComputeTopo);

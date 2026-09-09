@@ -400,65 +400,64 @@ bool GPU::_CheckOpenCL() {
 bool GPU::_CheckOpenGL() {
     DISPLAY_DEVICEW ddw = { 0 };
     ddw.cb = sizeof(ddw);
+    if (!EnumDisplayDevicesW(NULL, this->_adapterIndexForD3D9, &ddw, 0)) return false;
 
-    if (!EnumDisplayDevicesW(NULL, this->_adapterIndexForD3D9, &ddw, 0))
-        return false;
+    if (!(ddw.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP)) return false;
+
+    DEVMODEW dm = { 0 };
+    dm.dmSize = sizeof(dm);
+    RECT rect = { 0, 0, 1, 1 };
+    if (EnumDisplaySettingsW(ddw.DeviceName, ENUM_CURRENT_SETTINGS, &dm)) {
+        rect.left = dm.dmPosition.x;
+        rect.top = dm.dmPosition.y;
+        rect.right = rect.left + 1;
+        rect.bottom = rect.top + 1;
+    }
+
+    const wchar_t* clsName = L"DummyGLWindowClass";
+    WNDCLASSEXW wc = { sizeof(wc) };
+    wc.lpfnWndProc = DefWindowProcW;
+    wc.lpszClassName = clsName;
+    RegisterClassExW(&wc);
+
+    HWND hwnd = CreateWindowExW(0, clsName, L"", WS_POPUP, rect.left, rect.top, 1, 1, NULL, NULL, wc.hInstance, NULL);
+    if (!hwnd) return false;
 
     bool hasOGL46 = false;
-    HGLRC dummyContext = NULL;
-    HDC hDC = NULL;
-
-    if (ddw.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) {
-        hDC = CreateDCW(NULL, ddw.DeviceName, NULL, NULL);
-        if (!hDC) return false;
-
-        PIXELFORMATDESCRIPTOR pfd = { sizeof(PIXELFORMATDESCRIPTOR), 1 };
-        pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    HDC hDC = GetDC(hwnd);
+    if (hDC) {
+        PIXELFORMATDESCRIPTOR pfd = { sizeof(pfd), 1 };
+        pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
         pfd.iPixelType = PFD_TYPE_RGBA;
         pfd.cColorBits = 32;
 
-        int pixelFormat = ChoosePixelFormat(hDC, &pfd);
-        if (!pixelFormat || !SetPixelFormat(hDC, pixelFormat, &pfd)) {
-            DeleteDC(hDC);
-            return false;
-        }
+        int pf = ChoosePixelFormat(hDC, &pfd);
+        if (pf && SetPixelFormat(hDC, pf, &pfd)) {
+            HGLRC dummyContext = wglCreateContext(hDC);
+            if (dummyContext && wglMakeCurrent(hDC, dummyContext)) {
+                auto wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
 
-        dummyContext = wglCreateContext(hDC);
-        if (!dummyContext) {
-            DeleteDC(hDC);
-            return false;
-        }
-
-        if (!wglMakeCurrent(hDC, dummyContext)) {
-            wglDeleteContext(dummyContext);
-            DeleteDC(hDC);
-            return false;
-        }
-
-        PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB =
-            (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-
-        if (wglCreateContextAttribsARB) {
-            int attribs[] = {
-                WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-                WGL_CONTEXT_MINOR_VERSION_ARB, 6,
-                WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-                0
-            };
-
-            HGLRC gl46Context = wglCreateContextAttribsARB(hDC, NULL, attribs);
-            if (gl46Context) {
-                wglDeleteContext(gl46Context);
-                hasOGL46 = true;
+                if (wglCreateContextAttribsARB) {
+                    int attribs[] = {
+                        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+                        WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+                        WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                        0
+                    };
+                    HGLRC gl46 = wglCreateContextAttribsARB(hDC, NULL, attribs);
+                    if (gl46) {
+                        wglDeleteContext(gl46);
+                        hasOGL46 = true;
+                    }
+                }
+                wglMakeCurrent(NULL, NULL);
             }
+            if (dummyContext) wglDeleteContext(dummyContext);
         }
-
-        wglMakeCurrent(NULL, NULL); 
+        ReleaseDC(hwnd, hDC);
     }
 
-    if (dummyContext) wglDeleteContext(dummyContext);
-    if (hDC) DeleteDC(hDC);
-
+    DestroyWindow(hwnd);
     return hasOGL46;
 }
 

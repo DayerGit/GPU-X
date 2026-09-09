@@ -39,20 +39,6 @@ void Intel_GPU::UpdateSensors() {
 
         this->Memory.clock = telemetry_power_data.vramCurrentClockFrequency.value.data8;
 
-        double current_energy = telemetry_power_data.gpuEnergyCounter.value.datadouble;
-        double current_timestamp = telemetry_power_data.timeStamp.value.datadouble;
-
-        if (this->_last_timestamp != 0 && current_timestamp > this->_last_timestamp) {
-            double delta_energy = current_energy - this->_last_energy;
-            double delta_time = current_timestamp - this->_last_timestamp;
-
-            this->Core.power = static_cast<double>(delta_energy) / static_cast<double>(delta_time);
-        }
-        else this->Core.power = 0.0;
-
-        this->_last_energy = current_energy;
-        this->_last_timestamp = current_timestamp;
-
         this->Fan.speedRpm = telemetry_power_data.fanSpeed[0].value.data32;
     }
 

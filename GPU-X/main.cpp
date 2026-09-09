@@ -20,7 +20,7 @@ int main() {
         std::wcout << "  * DirectML: " << i->GetHasDirectML() << std::endl;
         std::wcout << "  * VULKAN: " << i->GetHasVulkan() << std::endl;
         std::wcout << "  * OpenCL: " << i->GetHasOpenCL() << std::endl;
-        std::wcout << "  * OpenGL 4.6: " << i->GetHasOpenCL() << std::endl;
+        std::wcout << "  * OpenGL 4.6: " << i->GetHasOGL4_6() << std::endl;
         std::wcout << "  * Resizable BAR: " << i->GetHasResizableBAR() << std::endl;
         
         switch (i->GetProducer()) {
@@ -34,7 +34,6 @@ int main() {
             std::wcout << "  * Memory Clock: " << intelGPU->GetMemoryClock() << std::endl;
             std::wcout << "  * Memory Default Clock: " << intelGPU->GetDefaultMemoryClock() << std::endl;
             std::wcout << "  * Memory Boost Clock: " << intelGPU->GetBoostMemoryClock() << std::endl;
-            std::wcout << "  * GPU Power: " << intelGPU->GetCorePower() << std::endl;
             std::wcout << "  * Fan Speed: " << intelGPU->GetFanSpeed() << std::endl;
             std::wcout << "  * Bus Maximum: " << intelGPU->GetBusMaximum() << std::endl;
             std::wcout << "  * Bus Current: " << intelGPU->GetBusCurrent() << std::endl;
@@ -46,6 +45,16 @@ int main() {
             std::wcout << "  * Bus Maximum: " << NvidiaGPU->GetBusMaximum() << std::endl;
             std::wcout << "  * Bus Current: " << NvidiaGPU->GetBusCurrent() << std::endl;
             std::wcout << "  * Memory Type: " << NvidiaGPU->GetMemoryType() << std::endl;
+            std::wcout << "  * Core Temp: " << NvidiaGPU->GetCoreTemperature() << std::endl;
+            std::wcout << "  * Core Clock: " << NvidiaGPU->GetCoreClock() << std::endl;
+            std::wcout << "  * Core Default Clock: " << NvidiaGPU->GetCoreDefaultClock() << std::endl;
+            std::wcout << "  * Core Boost Clock: " << NvidiaGPU->GetCoreBoostClock() << std::endl;
+            std::wcout << "  * Core Voltage: " << NvidiaGPU->GetCoreVoltage() << " V" << std::endl;
+            std::wcout << "  * Memory Clock: " << NvidiaGPU->GetMemoryClock() << std::endl;
+            std::wcout << "  * Memory Default Clock: " << NvidiaGPU->GetMemoryDefaultClock() << std::endl;
+            std::wcout << "  * Memory Boost Clock: " << NvidiaGPU->GetMemoryBoostClock() << std::endl;
+            std::wcout << "  * CUDA: " << NvidiaGPU->GetHasCUDA() << std::endl;
+            std::wcout << "  * PhysX: " << NvidiaGPU->GetHasPhysX() << std::endl;
 
             std::wcout << "  * Fan Speed: " << std::endl;
             const auto& fanSpeed = NvidiaGPU->GetFanSpeed();

@@ -20,21 +20,31 @@ public:
 
     std::vector<uint32_t> GetFanSpeed() const { return this->Fan.speedRpm; }
 
+    uint32_t GetCoreTemperature() const { return this->Core.temperature; }
+    uint32_t GetCoreClock() const { return this->Core.clock; }
+    uint32_t GetCoreDefaultClock() const { return this->Core.defaultClock; }
+    uint32_t GetCoreBoostClock() const { return this->Core.boost; }
+    uint32_t GetMemoryClock() const { return this->Memory.clock; }
+    uint32_t GetMemoryDefaultClock() const { return this->Memory.defaultClock; }
+    uint32_t GetMemoryBoostClock() const { return this->Memory.boost; }
+
+    double GetCoreVoltage() const { return this->Core.voltage; }
+
+    double GetHasCUDA() const { return this->_hasCUDA; }
+    double GetHasPhysX() const { return this->_hasPhysX; }
+
     ~NVIDIA_GPU();
 
 private:
     bool _hasCUDA, _hasPhysX;
 
     struct {
-        double clock, defaultClock, boost;
-        double power;
-        int8_t temperature;
-        int8_t voltage;
+        int32_t clock, defaultClock, boost, temperature;
+        double voltage;
     } Core;
 
     struct {
-        double defaultClock, boost;
-        int8_t clock;
+        double defaultClock, boost, clock;
         std::wstring memoryType;
     } Memory;
 
@@ -58,8 +68,8 @@ private:
     NvAPI_Initialize_t _NvAPI_Initialize;
     NvAPI_EnumPhysicalGPUs_t _NvAPI_EnumPhysicalGPUs;
     NvAPI_GPU_GetAllClockFrequencies_t _NvAPI_GPU_GetAllClockFrequencies;
+    NvAPI_GPU_GetDynamicPstatesInfoEx_t _NvAPI_GPU_GetDynamicPstatesInfoEx;
     NvAPI_GPU_GetPstates20_t _NvAPI_GPU_GetPstates20;
-    NvAPI_GPU_ClientPowerTopologyGetStatus_t _NvAPI_GPU_ClientPowerTopologyGetStatus;
     NvAPI_GPU_GetThermalSettings_t _NvAPI_GPU_GetThermalSettings;
     NvAPI_GPU_ClientVoltRailsGetStatus_t _NvAPI_GPU_ClientVoltRailsGetStatus;
     NvAPI_GPU_GetRamType_t _NvAPI_GPU_GetRamType;
@@ -69,6 +79,7 @@ private:
     NvAPI_GPU_GetBusType_t _NvAPI_GPU_GetBusType;
     NvAPI_GPU_GetCurrentPCIEDownstreamWidth_t _NvAPI_GPU_GetCurrentPCIEDownstreamWidth;
     NvAPI_GPU_GetPCIEInfo_t _NvAPI_GPU_GetPCIEInfo;
+    NvAPI_GPU_CudaEnumComputeCapableGpus_t _NvAPI_GPU_CudaEnumComputeCapableGpus;
     NvAPI_Unload_t _NvAPI_Unload;
 
     NvPhysicalGpuHandle _physGpuHandle = nullptr;
@@ -81,6 +92,11 @@ private:
     void _FillBIOSInfo();
     void _FillBusInfo();
     void _FillFanInfo();
+
     void _FillMemoryInfo();
+
+    int32_t _GetClock(NV_GPU_PUBLIC_CLOCK_ID clockID, NV_GPU_CLOCK_FREQUENCIES_CLOCK_TYPE clockType);
     void _FillCoreInfo();
+
+    void _FillCUDAPhysXInfo();
 };
