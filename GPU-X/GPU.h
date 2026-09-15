@@ -135,6 +135,9 @@ protected:
 	DWORD _pciFunctionNumber = MAXDWORD;
 	bool _pciLocationValid = false;
 
+	HDEVINFO _hDevInfo;
+	SP_DEVINFO_DATA _devInfoData;
+
 private:
 
 	D3D_FEATURE_LEVEL levelsToCheck[10] = {

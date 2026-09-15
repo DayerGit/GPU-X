@@ -71,14 +71,6 @@ void GPU::_FetchDriverInfo() {
 
     if (hDevInfo == INVALID_HANDLE_VALUE) return;
 
-    struct DevInfoListGuard {
-        HDEVINFO handle;
-        ~DevInfoListGuard() {
-            if (handle != INVALID_HANDLE_VALUE)
-                SetupDiDestroyDeviceInfoList(handle);
-        }
-    } guard = { hDevInfo };
-
     SP_DEVINFO_DATA devInfoData = {};
     devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
 
@@ -93,6 +85,8 @@ void GPU::_FetchDriverInfo() {
         this->_FillPCILocation(hDevInfo, &devInfoData);
 
         this->_CheckResizableBar(devInfoData);
+        this->_hDevInfo = hDevInfo;
+        this->_devInfoData = devInfoData;
         break;
     }
 }
@@ -484,4 +478,7 @@ bool GPU::_CheckOpenGL() {
 GPU::~GPU() {
 	if (this->_pDXGIAdapter)
 		this->_pDXGIAdapter->Release();
+
+    if (this->_hDevInfo != INVALID_HANDLE_VALUE)
+        SetupDiDestroyDeviceInfoList(this->_hDevInfo);
 }

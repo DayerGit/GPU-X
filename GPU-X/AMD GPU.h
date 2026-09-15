@@ -64,6 +64,7 @@ private:
     ADL_ADAPTER_NUMBEROFADAPTERS_GET _ADL_ADAPTER_NUMBEROFADAPTERS_GET;
     ADL_ADAPTER_ADAPTERINFO_GET _ADL_ADAPTER_ADAPTERINFO_GET;
     ADL_ADAPTER_VIDEOBIOSINFO_GET _ADL_ADAPTER_VIDEOBIOSINFO_GET;
+    ADL_ADAPTER_MEMORYINFO_GET _ADL_ADAPTER_MEMORYINFO_GET;
     ADL_MAIN_CONTROL_DESTROY _ADL_MAIN_CONTROL_DESTROY;
 
     int _physAdapterIndex;
@@ -72,4 +73,8 @@ private:
     bool _GetDeviceHandle();
 
     void _FillBIOSInfo();
+    void _FillBusInfo();
+    void _FillMemoryInfo();
+
+    std::wstring _FormatPcieString(ULONG speed, ULONG width);
 };

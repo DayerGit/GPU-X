@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <pciprop.h>
+
 AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance)
 	: GPU(pDXGIAdapter, AdapterLUID, index, vkInstance) 
 {
@@ -18,6 +20,8 @@ AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInst
 	}
 
 	this->_FillBIOSInfo();
+	this->_FillBusInfo();
+	this->_FillMemoryInfo();
 }
 
 void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
@@ -28,7 +32,6 @@ void AMD_GPU::UpdateSensors() {
 }
 
 bool AMD_GPU::_LoadLib() {
-	std::cout << "Let's Start _LoadLib" << std::endl;
 
 #ifdef _WIN64
 	this->_hAModule = LoadLibraryA("atiadlxx.dll");
@@ -36,58 +39,38 @@ bool AMD_GPU::_LoadLib() {
 	this->_hAModule = LoadLibraryA("atiadlxy.dll");
 #endif
 
-	if (!this->_hAModule) {
-		std::cerr << "Error Loading AMD Library!" << std::endl;
-		return false;
-	}
+	if (!this->_hAModule) return false;
 
 	this->_ADL_MAIN_CONTROL_CREATE = (ADL_MAIN_CONTROL_CREATE)GetProcAddress(this->_hAModule, "ADL_Main_Control_Create");
-	if (!this->_ADL_MAIN_CONTROL_CREATE) {
-		std::cerr << "Error Loading ADL_Main_Control_Create!" << std::endl;
-		return false;
-	}
+	if (!this->_ADL_MAIN_CONTROL_CREATE) return false;
 
 	this->_ADL_ADAPTER_NUMBEROFADAPTERS_GET = (ADL_ADAPTER_NUMBEROFADAPTERS_GET)GetProcAddress(this->_hAModule, "ADL_Adapter_NumberOfAdapters_Get");
-	if (!this->_ADL_ADAPTER_NUMBEROFADAPTERS_GET) {
-		std::cerr << "Error Loading ADL_Adapter_NumberOfAdapters_Get!" << std::endl;
-		return false;
-	}
+	if (!this->_ADL_ADAPTER_NUMBEROFADAPTERS_GET) return false;
 
 	this->_ADL_ADAPTER_ADAPTERINFO_GET = (ADL_ADAPTER_ADAPTERINFO_GET)GetProcAddress(this->_hAModule, "ADL_Adapter_AdapterInfo_Get");
-	if (!this->_ADL_ADAPTER_ADAPTERINFO_GET) {
-		std::cerr << "Error Loading ADL_Adapter_AdapterInfo_Get!" << std::endl;
-		return false;
-	}
+	if (!this->_ADL_ADAPTER_ADAPTERINFO_GET) return false;
 
 	this->_ADL_ADAPTER_VIDEOBIOSINFO_GET = (ADL_ADAPTER_VIDEOBIOSINFO_GET)GetProcAddress(this->_hAModule, "ADL_Adapter_VideoBiosInfo_Get");
-	if (!this->_ADL_ADAPTER_VIDEOBIOSINFO_GET) {
-		std::cerr << "Error Loading ADL_Adapter_VideoBiosInfo_Get!" << std::endl;
+	if (!this->_ADL_ADAPTER_VIDEOBIOSINFO_GET) return false;
+
+	this->_ADL_ADAPTER_MEMORYINFO_GET = (ADL_ADAPTER_MEMORYINFO_GET)GetProcAddress(this->_hAModule, "ADL_Adapter_MemoryInfo_Get");
+	if (!this->_ADL_ADAPTER_MEMORYINFO_GET) {
+		std::cerr << "Can't Load ADL_Adapter_MemoryInfo_Get!" << std::endl;
 		return false;
 	}
 
 	this->_ADL_MAIN_CONTROL_DESTROY = (ADL_MAIN_CONTROL_DESTROY)GetProcAddress(this->_hAModule, "ADL_Main_Control_Destroy");
-	if (!this->_ADL_MAIN_CONTROL_DESTROY) {
-		std::cerr << "Error Loading ADL_Main_Control_Destroy!" << std::endl;
-		return false;
-	}
+	if (!this->_ADL_MAIN_CONTROL_DESTROY) return false;
 
 	int result = this->_ADL_MAIN_CONTROL_CREATE(ADL_Main_Memory_Alloc, 1);
 
-	if (result != ADL_OK) {
-		std::cerr << "Error init ADL! Result " << result << std::endl;
-		return false;
-	}
+	if (result != ADL_OK) return false;
 
 	return true;
 }
 
 bool AMD_GPU::_GetDeviceHandle() {
-	std::cout << "Let's Start _GetDeviceHandle" << std::endl;
-
-	if (!this->_pciLocationValid) {
-		std::cerr << "PCI location unknown, cannot match ADL adapter reliably!" << std::endl;
-		return false;
-	}
+	if (!this->_pciLocationValid) return false;
 
 	int numAdapters = 0;
 	int result = this->_ADL_ADAPTER_NUMBEROFADAPTERS_GET(&numAdapters);
@@ -107,22 +90,63 @@ bool AMD_GPU::_GetDeviceHandle() {
 			}
 		}
 		free(adapterInfo);
-		std::cerr << "No AMD ADL adapter matched by PCI location!" << std::endl;
 	}
-	else std::cerr << "Not Found AMD GPU! Result " << result << std::endl;
 
 	return false;
 }
 
+void AMD_GPU::_FillMemoryInfo() {
+	ADLMemoryInfo adlMem;
+	int result = this->_ADL_ADAPTER_MEMORYINFO_GET(this->_physAdapterIndex, &adlMem);
+	if (ADL_OK == result) {
+		std::string asciiString(adlMem.strMemoryType);
+		this->Memory.memoryType = std::wstring(asciiString.begin(), asciiString.end());
+	}
+	else this->Memory.memoryType = L"UNKNOWN";
+}
+
+std::wstring AMD_GPU::_FormatPcieString(ULONG speed, ULONG width) {
+	if (speed == 0 || width == 0) return L"UNKNOWN";
+
+	const wchar_t* gen = L"?";
+	switch (speed) {
+	case 1: gen = L"1.0"; break;  
+	case 2: gen = L"2.0"; break;  
+	case 3: gen = L"3.0"; break;  
+	case 4: gen = L"4.0"; break;  
+	case 5: gen = L"5.0"; break;  
+	case 6: gen = L"6.0"; break;  
+	default: gen = L"?"; break;
+	}
+
+	return L"PCIe " + std::wstring(gen) + L" x" + std::to_wstring(width);
+}
+
+void AMD_GPU::_FillBusInfo() {
+	DEVPROPTYPE propType = 0;
+	DWORD requiredSize = 0;
+
+	ULONG currentSpeed = 0;
+	ULONG currentWidth = 0;
+	ULONG maxSpeed = 0;
+	ULONG maxWidth = 0;
+
+	SetupDiGetDevicePropertyW(this->_hDevInfo, &this->_devInfoData, &DEVPKEY_PciDevice_CurrentLinkSpeed, &propType, reinterpret_cast<PBYTE>(&currentSpeed), sizeof(currentSpeed), &requiredSize, 0);
+	SetupDiGetDevicePropertyW(this->_hDevInfo, &this->_devInfoData, &DEVPKEY_PciDevice_CurrentLinkWidth, &propType, reinterpret_cast<PBYTE>(&currentWidth), sizeof(currentWidth), &requiredSize, 0);
+	SetupDiGetDevicePropertyW(this->_hDevInfo, &this->_devInfoData, &DEVPKEY_PciDevice_MaxLinkSpeed, &propType, reinterpret_cast<PBYTE>(&maxSpeed), sizeof(maxSpeed), &requiredSize, 0);
+	SetupDiGetDevicePropertyW(this->_hDevInfo, &this->_devInfoData, &DEVPKEY_PciDevice_MaxLinkWidth, &propType, reinterpret_cast<PBYTE>(&maxWidth), sizeof(maxWidth), &requiredSize, 0);
+
+	this->Bus.current = this->_FormatPcieString(currentSpeed, currentWidth);
+	this->Bus.maximum = this->_FormatPcieString(maxSpeed, maxWidth);
+}
+
 void AMD_GPU::_FillBIOSInfo() {
-	std::cout << "Let's Start _FillBIOSInfo" << std::endl;
 	ADLBiosInfo biosInfo;
 	int result = this->_ADL_ADAPTER_VIDEOBIOSINFO_GET(this->_physAdapterIndex, &biosInfo);
 	if (ADL_OK == result) {
 		std::string asciiString(biosInfo.strVersion);
 		this->BIOS.version = std::wstring(asciiString.begin(), asciiString.end());
 	}
-	else std::cerr << "Error _ADL_ADAPTER_VIDEOBIOSINFO_GET! Result " << result << std::endl;
 }
 
 AMD_GPU::~AMD_GPU() {
