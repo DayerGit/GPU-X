@@ -137,6 +137,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AMD GPU.h" />
+    <ClInclude Include="AMD\adl_common.h" />
+    <ClInclude Include="AMD\adl_sdk.h" />
     <ClInclude Include="GPU.h" />
     <ClInclude Include="GPUFactory.h" />
     <ClInclude Include="Intel GPU.h" />

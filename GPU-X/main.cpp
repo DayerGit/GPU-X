@@ -2,6 +2,10 @@
 
 #include "GPUFactory.h"
 
+extern "C" {
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+}
 
 int main() {
     GPUFactory factory;
@@ -62,7 +66,11 @@ int main() {
                 std::wcout << "    - Fan #" << i+1 << ": " << fanSpeed[i] << std::endl;
 
             }
-
+            break;
+        }
+        case TypeOfGPU::AMD_GPU: {
+            AMD_GPU* AmdGPU = static_cast<AMD_GPU*>(i.get());
+            std::wcout << "  * BIOS Version: " << AmdGPU->GetBIOSVersion() << std::endl;
             break;
         }
         }
@@ -70,6 +78,6 @@ int main() {
         std::cout << std::endl;
     }
 
-    //system("pause");
+    system("pause");
     return 0;
 }

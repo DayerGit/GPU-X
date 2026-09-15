@@ -90,8 +90,28 @@ void GPU::_FetchDriverInfo() {
         this->_driverVersion = this->_GetDevicePropertyString(hDevInfo, &devInfoData, DEVPKEY_Device_DriverVersion, {});
         this->_driverDate = this->_GetDriverDate(hDevInfo, &devInfoData);
 
+        this->_FillPCILocation(hDevInfo, &devInfoData);
+
         this->_CheckResizableBar(devInfoData);
         break;
+    }
+}
+
+void GPU::_FillPCILocation(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData) {
+    DEVPROPTYPE propType = 0;
+    DWORD requiredSize = 0;
+    DWORD busNumber = MAXDWORD;
+    DWORD address = MAXDWORD;
+
+    if (SetupDiGetDevicePropertyW(hDevInfo, pDevInfoData, &DEVPKEY_Device_BusNumber, &propType, reinterpret_cast<PBYTE>(&busNumber), sizeof(busNumber), &requiredSize, 0) 
+        && propType == DEVPROP_TYPE_UINT32) this->_pciBusNumber = busNumber;
+    else return;
+
+    if (SetupDiGetDevicePropertyW(hDevInfo, pDevInfoData, &DEVPKEY_Device_Address, &propType, reinterpret_cast<PBYTE>(&address), sizeof(address), &requiredSize, 0)
+        && propType == DEVPROP_TYPE_UINT32) {
+        this->_pciDeviceNumber = (address >> 16) & 0xFFFF;
+        this->_pciFunctionNumber = address & 0xFFFF;
+        this->_pciLocationValid = true;
     }
 }
 

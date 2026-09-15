@@ -22,6 +22,9 @@
     <Filter Include="Файлы заголовков\NVIDIA">
       <UniqueIdentifier>{3e0233e0-d083-4d50-8d28-62e325fbe044}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\AMD">
+      <UniqueIdentifier>{14fac30c-f5a9-4a3a-bbc9-922d50152b58}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -70,6 +73,12 @@
     </ClInclude>
     <ClInclude Include="NVIDIA\nvapi_common.h">
       <Filter>Файлы заголовков\NVIDIA</Filter>
+    </ClInclude>
+    <ClInclude Include="AMD\adl_sdk.h">
+      <Filter>Файлы заголовков\AMD</Filter>
+    </ClInclude>
+    <ClInclude Include="AMD\adl_common.h">
+      <Filter>Файлы заголовков\AMD</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

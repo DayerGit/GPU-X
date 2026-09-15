@@ -106,6 +106,11 @@ protected:
 
 	VkInstance _vkInstance;
 
+	DWORD _pciBusNumber = MAXDWORD;
+	DWORD _pciDeviceNumber = MAXDWORD;
+	DWORD _pciFunctionNumber = MAXDWORD;
+	bool _pciLocationValid = false;
+
 private:
 
 	D3D_FEATURE_LEVEL levelsToCheck[10] = {
@@ -145,6 +150,7 @@ private:
 	}
 
 	void _FetchDriverInfo();
+	void _FillPCILocation(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData);
 
 	std::wstring _GetDevicePropertyString(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, const DEVPROPKEY& key1, const DEVPROPKEY& key2);
 	std::wstring _GetDriverDate(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData);

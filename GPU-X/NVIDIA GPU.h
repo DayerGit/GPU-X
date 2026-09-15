@@ -4,8 +4,7 @@
 #include <vector>
 
 #include "GPU.h"
-#include "NVIDIA/nvapi.h"
-#include "nvapi_common.h"
+#include "NVIDIA/nvapi_common.h"
 
 class NVIDIA_GPU : public GPU {
 public:
