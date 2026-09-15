@@ -10,9 +10,27 @@ class AMD_GPU : public GPU {
 public:
     AMD_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance);
     
-    void UpdateSensors();
+    void UpdateSensors() override;
 
-    std::wstring GetBIOSVersion() const { return this->BIOS.version; }
+    std::wstring GetBIOSVersion() const override { return this->BIOS.version; }
+    std::wstring GetBusMaximum() const override { return this->Bus.maximum; }
+    std::wstring GetBusCurrent() const override { return this->Bus.current; }
+    std::wstring GetMemoryType() const override { return this->Memory.memoryType; }
+
+    std::vector<uint32_t> GetFanSpeed() const override { return this->Fan.speedRpm; }
+
+    uint32_t GetCoreTemperature() const override { return this->Core.temperature; }
+    uint32_t GetCoreClock() const override { return this->Core.clock; }
+    uint32_t GetDefaultCoreClock() const override { return this->Core.defaultClock; }
+    uint32_t GetBoostCoreClock() const override { return this->Core.boost; }
+    uint32_t GetMemoryClock() const override { return this->Memory.clock; }
+    uint32_t GetDefaultMemoryClock() const override { return this->Memory.defaultClock; }
+    uint32_t GetBoostMemoryClock() const override { return this->Memory.boost; }
+
+    double GetCoreVoltage() const override { return this->Core.voltage; }
+
+    bool GetHasCUDA() const override { return false; }
+    bool GetHasPhysX() const override { return false; }
     
     ~AMD_GPU();
 

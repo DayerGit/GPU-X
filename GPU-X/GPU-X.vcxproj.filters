@@ -80,5 +80,11 @@
     <ClInclude Include="AMD\adl_common.h">
       <Filter>Файлы заголовков\AMD</Filter>
     </ClInclude>
+    <ClInclude Include="VersionHelper.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="GPU-X.manifest" />
   </ItemGroup>
 </Project>

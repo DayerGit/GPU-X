@@ -24,6 +24,9 @@ void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
 	return malloc(iSize);
 }
 
+void AMD_GPU::UpdateSensors() {
+}
+
 bool AMD_GPU::_LoadLib() {
 	std::cout << "Let's Start _LoadLib" << std::endl;
 

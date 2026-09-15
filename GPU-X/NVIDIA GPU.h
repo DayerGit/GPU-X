@@ -10,27 +10,27 @@ class NVIDIA_GPU : public GPU {
 public:
     NVIDIA_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance);
 
-    void UpdateSensors();
+    void UpdateSensors() override;
 
-    std::wstring GetBIOSVersion() const { return this->BIOS.version; }
-    std::wstring GetBusMaximum() const { return this->Bus.maximum; }
-    std::wstring GetBusCurrent() const { return this->Bus.current; }
-    std::wstring GetMemoryType() const { return this->Memory.memoryType; }
+    std::wstring GetBIOSVersion() const override { return this->BIOS.version; }
+    std::wstring GetBusMaximum() const override { return this->Bus.maximum; }
+    std::wstring GetBusCurrent() const override { return this->Bus.current; }
+    std::wstring GetMemoryType() const override { return this->Memory.memoryType; }
 
-    std::vector<uint32_t> GetFanSpeed() const { return this->Fan.speedRpm; }
+    std::vector<uint32_t> GetFanSpeed() const override { return this->Fan.speedRpm; }
 
-    uint32_t GetCoreTemperature() const { return this->Core.temperature; }
-    uint32_t GetCoreClock() const { return this->Core.clock; }
-    uint32_t GetCoreDefaultClock() const { return this->Core.defaultClock; }
-    uint32_t GetCoreBoostClock() const { return this->Core.boost; }
-    uint32_t GetMemoryClock() const { return this->Memory.clock; }
-    uint32_t GetMemoryDefaultClock() const { return this->Memory.defaultClock; }
-    uint32_t GetMemoryBoostClock() const { return this->Memory.boost; }
+    uint32_t GetCoreTemperature() const override { return this->Core.temperature; }
+    uint32_t GetCoreClock() const override { return this->Core.clock; }
+    uint32_t GetDefaultCoreClock() const override { return this->Core.defaultClock; }
+    uint32_t GetBoostCoreClock() const override { return this->Core.boost; }
+    uint32_t GetMemoryClock() const override { return this->Memory.clock; }
+    uint32_t GetDefaultMemoryClock() const override { return this->Memory.defaultClock; }
+    uint32_t GetBoostMemoryClock() const override { return this->Memory.boost; }
 
-    double GetCoreVoltage() const { return this->Core.voltage; }
+    double GetCoreVoltage() const override { return this->Core.voltage; }
 
-    double GetHasCUDA() const { return this->_hasCUDA; }
-    double GetHasPhysX() const { return this->_hasPhysX; }
+    bool GetHasCUDA() const override { return this->_hasCUDA; }
+    bool GetHasPhysX() const override { return this->_hasPhysX; }
 
     ~NVIDIA_GPU();
 

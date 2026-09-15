@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <vector>
 
 #include <windows.h>
 #include <setupapi.h>
@@ -21,6 +22,7 @@
 #include <vulkan/vulkan.h>
 
 #include <CL\cl.h>
+
 
 #ifndef D3DPS20CAPS_DYNAMICFLOWCONTROL
 #define D3DPS20CAPS_DYNAMICFLOWCONTROL 0x00000001
@@ -91,6 +93,28 @@ public:
 	uint32_t GetMemSize() const { return this->_memSize; }
 
 	TypeOfGPU GetProducer() const { return this->_whoIsMyDaddy; }
+
+	virtual void UpdateSensors() = 0;
+
+	virtual std::wstring GetBIOSVersion() const = 0;
+	virtual std::wstring GetBusMaximum() const = 0;
+	virtual std::wstring GetBusCurrent() const = 0;
+	virtual std::wstring GetMemoryType() const = 0;
+
+	virtual std::vector<uint32_t> GetFanSpeed() const = 0;
+
+	virtual uint32_t GetCoreTemperature() const = 0;
+	virtual uint32_t GetCoreClock() const = 0;
+	virtual uint32_t GetDefaultCoreClock() const = 0;
+	virtual uint32_t GetBoostCoreClock() const = 0;
+	virtual uint32_t GetMemoryClock() const = 0;
+	virtual uint32_t GetDefaultMemoryClock() const = 0;
+	virtual uint32_t GetBoostMemoryClock() const = 0;
+
+	virtual double GetCoreVoltage() const = 0;
+
+	virtual bool GetHasCUDA() const = 0;
+	virtual bool GetHasPhysX() const = 0;
 	
 	~GPU();
 

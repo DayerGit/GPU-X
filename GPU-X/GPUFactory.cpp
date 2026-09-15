@@ -56,10 +56,10 @@ std::vector<std::unique_ptr<GPU>> GPUFactory::LetsCreateGPUs() {
 			result.emplace_back(std::make_unique<Intel_GPU>(pAdapter, adapterDesc.AdapterLuid, i, this->_vkInstance));
 			break;
 		}
-		default: {
+		/*default: {
 			result.emplace_back(std::make_unique<GPU>(pAdapter, adapterDesc.AdapterLuid, i, this->_vkInstance));
 			break;
-		}
+		}*/
 		}
 	}
 

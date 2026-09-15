@@ -10,25 +10,27 @@ class Intel_GPU : public GPU {
 public:
     Intel_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance);
     
-    void UpdateSensors();
+    void UpdateSensors() override;
 
-    std::wstring GetBIOSVersion() const { return this->BIOS.version; }
-    std::wstring GetMemoryType() const { return this->Memory.memoryType; }
-    std::wstring GetBusMaximum() const { return this->Bus.maximum; }
-    std::wstring GetBusCurrent() const { return this->Bus.current; }
+    std::wstring GetBIOSVersion() const override { return this->BIOS.version; }
+    std::wstring GetMemoryType() const override { return this->Memory.memoryType; }
+    std::wstring GetBusMaximum() const override { return this->Bus.maximum; }
+    std::wstring GetBusCurrent() const override { return this->Bus.current; }
 
-    double GetCoreClock() const { return this->Core.clock; }
-    double GetDefaultCoreClock() const { return this->Core.defaultClock; }
-    double GetBoostCoreClock() const { return this->Core.boost; }
+    std::vector<uint32_t> GetFanSpeed() const { return std::vector<uint32_t>(this->Fan.speedRpm); }
 
-    double GetDefaultMemoryClock() const { return this->Memory.defaultClock; }
-    double GetBoostMemoryClock() const { return this->Memory.boost; }
+    uint32_t GetCoreClock() const override { return uint32_t(this->Core.clock); }
+    uint32_t GetDefaultCoreClock() const override { return uint32_t(this->Core.defaultClock); }
+    uint32_t GetBoostCoreClock() const override { return uint32_t(this->Core.boost); }
+    uint32_t GetDefaultMemoryClock() const override { return uint32_t(this->Memory.defaultClock); }
+    uint32_t GetBoostMemoryClock() const override { return uint32_t(this->Memory.boost); }
+    uint32_t GetMemoryClock() const override { return uint32_t(this->Memory.clock); }
+    uint32_t GetCoreTemperature() const override { return uint32_t(this->Core.temperature); }
 
-    int8_t GetMemoryClock() const { return this->Memory.clock; }
-    int8_t GetCoreTemperature() const { return this->Core.temperature; }
-    int8_t GetCoreVoltage() const { return this->Core.voltage; }
+    double GetCoreVoltage() const override { return double(this->Core.voltage); }
 
-    int32_t GetFanSpeed() const { return this->Fan.speedRpm; }
+    bool GetHasCUDA() const override { return false; }
+    bool GetHasPhysX() const override { return false; }
 
     ~Intel_GPU();
 
