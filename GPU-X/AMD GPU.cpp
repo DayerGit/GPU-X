@@ -14,6 +14,11 @@ AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInst
 		return;
 	}
 
+	if (!this->_GetDeviceHandle()) {
+		std::cerr << "Error _GetDeviceHandle!" << std::endl;
+		return;
+	}
+
 	this->_FillBIOSInfo();
 	this->_FillBusInfo();
 	this->_FillFanInfo();
@@ -48,9 +53,6 @@ bool AMD_GPU::_LoadLib() {
 	this->_ADL_MAIN_CONTROL_CREATE = (ADL_MAIN_CONTROL_CREATE)GetProcAddress(this->_hAModule, "ADL_Main_Control_Create");
 	if (!this->_ADL_MAIN_CONTROL_CREATE) return false;
 
-	this->_ADL_OVERDRIVE_CAPS = (ADL_OVERDRIVE_CAPS)GetProcAddress(this->_hAModule, "ADL_Overdrive_Caps");
-	if (!this->_ADL_OVERDRIVE_CAPS) return false;
-
 	this->_ADL_ADAPTER_NUMBEROFADAPTERS_GET = (ADL_ADAPTER_NUMBEROFADAPTERS_GET)GetProcAddress(this->_hAModule, "ADL_Adapter_NumberOfAdapters_Get");
 	if (!this->_ADL_ADAPTER_NUMBEROFADAPTERS_GET) return false;
 
@@ -63,22 +65,20 @@ bool AMD_GPU::_LoadLib() {
 	this->_ADL_ADAPTER_MEMORYINFO_GET = (ADL_ADAPTER_MEMORYINFO_GET)GetProcAddress(this->_hAModule, "ADL_Adapter_MemoryInfo_Get");
 	if (!this->_ADL_ADAPTER_MEMORYINFO_GET) return false;
 
-	if (!this->_GetDeviceHandle()) {
-		std::cerr << "Error _GetDeviceHandle!" << std::endl;
-		return false;
+	this->_ADL2_OVERDRIVEN_FANCONTROL_GET = (ADL2_OVERDRIVEN_FANCONTROL_GET)GetProcAddress(this->_hAModule, "ADL2_OverdriveN_FanControl_Get");
+	if (this->_ADL2_OVERDRIVEN_FANCONTROL_GET) this->_currentGeneration = 'N';
+	else {
+		this->_ADL_OVERDRIVE6_FANSPEED_GET = (ADL_OVERDRIVE6_FANSPEED_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_FanSpeed_Get");
+		if (this->_ADL_OVERDRIVE6_FANSPEED_GET) this->_currentGeneration = 6;
+		else {
+			this->_ADL_OVERDRIVE5_FANSPEED_GET = (ADL_OVERDRIVE5_FANSPEED_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_FanSpeed_Get");
+			if (this->_ADL_OVERDRIVE5_FANSPEED_GET) this->_currentGeneration = 5;
+			else return false;
+		}
 	}
-
-	int supported, enabled;
-	int result = this->_ADL_OVERDRIVE_CAPS(this->_physAdapterIndex, &supported, &enabled, &this->_currentGeneration);
-	if (result != ADL_OK) return false;
 
 	switch (this->_currentGeneration) {
 	case 5: {
-		this->_ADL_OVERDRIVE5_FANSPEED_GET = 
-			(ADL_OVERDRIVE5_FANSPEED_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_FanSpeed_Get");
-		
-		if (!this->_ADL_OVERDRIVE5_FANSPEED_GET) return false;
-
 		this->_ADL_OVERDRIVE5_CURRENTACTIVITY_GET = 
 			(ADL_OVERDRIVE5_CURRENTACTIVITY_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_CurrentActivity_Get");
 
@@ -98,15 +98,9 @@ bool AMD_GPU::_LoadLib() {
 			(ADL_OVERDRIVE5_TEMPERATURE_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_Temperature_Get");
 
 		if (!this->_ADL_OVERDRIVE5_TEMPERATURE_GET) return false;
-
 		break;
 	}
 	case 6: {
-		this->_ADL_OVERDRIVE6_FANSPEED_GET = 
-			(ADL_OVERDRIVE6_FANSPEED_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_FanSpeed_Get");
-		
-		if (!this->_ADL_OVERDRIVE6_FANSPEED_GET) return false;
-
 		this->_ADL_OVERDRIVE6_CURRENTSTATUS_GET =
 			(ADL_OVERDRIVE6_CURRENTSTATUS_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_CurrentStatus_Get");
 
@@ -144,7 +138,7 @@ bool AMD_GPU::_LoadLib() {
 	this->_ADL_MAIN_CONTROL_DESTROY = (ADL_MAIN_CONTROL_DESTROY)GetProcAddress(this->_hAModule, "ADL_Main_Control_Destroy");
 	if (!this->_ADL_MAIN_CONTROL_DESTROY) return false;
 
-	result = this->_ADL_MAIN_CONTROL_CREATE(ADL_Main_Memory_Alloc, 1);
+	int result = this->_ADL_MAIN_CONTROL_CREATE(ADL_Main_Memory_Alloc, 1);
 
 	if (result != ADL_OK) return false;
 

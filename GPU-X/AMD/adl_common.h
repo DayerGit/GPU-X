@@ -4,7 +4,6 @@
 
 typedef int(__cdecl* ADL_MAIN_CONTROL_CREATE) (ADL_MAIN_MALLOC_CALLBACK callback, int iEnumConnectedAdapters);
 typedef int(__cdecl* ADL_MAIN_CONTROL_DESTROY) (void);
-typedef int(__cdecl* ADL_OVERDRIVE_CAPS) (int iAdapterIndex, int* iSupported, int* iEnabled, int* iVersion);
 
 typedef int(__cdecl* ADL_ADAPTER_NUMBEROFADAPTERS_GET) (int* lpNumAdapters);
 typedef int(__cdecl* ADL_ADAPTER_ADAPTERINFO_GET) (LPAdapterInfo lpInfo, int iInputSize);
@@ -36,7 +35,6 @@ typedef int (*ADL_OVERDRIVE6_VOLTAGECONTROL_GET)(int iAdapterIndex, int* cur, in
 // ---------------------------------------------------------------------------
 typedef int(__cdecl* ADL2_MAIN_CONTROL_CREATE) (ADL_MAIN_MALLOC_CALLBACK callback, int iEnumConnectedAdapters, ADL_CONTEXT_HANDLE* context);
 typedef int(__cdecl* ADL2_MAIN_CONTROL_DESTROY) (ADL_CONTEXT_HANDLE context);
-typedef int(__cdecl* ADL2_OVERDRIVE_CAPS) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* iSupported, int* iEnabled, int* iVersion);
 
 typedef int(__cdecl* ADL2_OVERDRIVE_CAPS) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* iSupported, int* iEnabled, int* iVersion);
 typedef int(__cdecl* ADL2_OVERDRIVEN_CAPABILITIES_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNCapabilities* lpODCapabilities);
