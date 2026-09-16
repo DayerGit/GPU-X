@@ -83,6 +83,21 @@
     <ClInclude Include="VersionHelper.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="Overdrive.h">
+      <Filter>Файлы заголовков\AMD</Filter>
+    </ClInclude>
+    <ClInclude Include="Overdrive5.h">
+      <Filter>Файлы заголовков\AMD</Filter>
+    </ClInclude>
+    <ClInclude Include="Overdrive6.h">
+      <Filter>Файлы заголовков\AMD</Filter>
+    </ClInclude>
+    <ClInclude Include="OverdriveN.h">
+      <Filter>Файлы заголовков\AMD</Filter>
+    </ClInclude>
+    <ClInclude Include="Overdrive8.h">
+      <Filter>Файлы заголовков\AMD</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="GPU-X.manifest" />

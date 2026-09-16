@@ -146,6 +146,11 @@
     <ClInclude Include="NVIDIA\nvapi_common.h" />
     <ClInclude Include="NVIDIA GPU.h" />
     <ClInclude Include="NVIDIA\nvapi.h" />
+    <ClInclude Include="Overdrive.h" />
+    <ClInclude Include="Overdrive5.h" />
+    <ClInclude Include="Overdrive6.h" />
+    <ClInclude Include="Overdrive8.h" />
+    <ClInclude Include="OverdriveN.h" />
     <ClInclude Include="VersionHelper.h" />
   </ItemGroup>
   <ItemGroup>
