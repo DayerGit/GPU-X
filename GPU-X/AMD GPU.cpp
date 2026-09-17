@@ -19,10 +19,40 @@ AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInst
 		return;
 	}
 
+	if (!this->_GetCurrentGeneration()) {
+		std::cerr << "Error _GetCurrentGeneration!" << std::endl;
+		return;
+	}
+
+	switch (this->_currentGeneration) {
+	case 5: {
+		this->_overdrive = std::make_unique<Overdrive5>(this->_hAModule, this->_physAdapterIndex);
+		break;
+	}
+	case 6: {
+		this->_overdrive = std::make_unique<Overdrive6>(this->_hAModule, this->_physAdapterIndex);
+		break;
+	}
+	case 7: {
+		this->_overdrive = std::make_unique<Overdrive7>(this->_hAModule, this->_physAdapterIndex);
+		break;
+	}
+	case 8: {
+		this->_overdrive = std::make_unique<Overdrive8>(this->_hAModule, this->_physAdapterIndex);
+		break;
+	}
+	}
+
+	if (!this->_overdrive->LoadLib()) {
+		std::cerr << "Error Overdrive class Load!" << std::endl;
+		return;
+	}
+
 	this->_FillBIOSInfo();
 	this->_FillBusInfo();
-	this->_FillFanInfo();
 	this->_FillMemoryTypeInfo();
+	
+	this->_FillFanInfo();
 	this->_FillClockInfo();
 	this->_FillDefaultAndBoostClockInfo();
 	this->_FillCoreTemp();
@@ -65,76 +95,6 @@ bool AMD_GPU::_LoadLib() {
 	this->_ADL_ADAPTER_MEMORYINFO_GET = (ADL_ADAPTER_MEMORYINFO_GET)GetProcAddress(this->_hAModule, "ADL_Adapter_MemoryInfo_Get");
 	if (!this->_ADL_ADAPTER_MEMORYINFO_GET) return false;
 
-	this->_ADL2_OVERDRIVEN_FANCONTROL_GET = (ADL2_OVERDRIVEN_FANCONTROL_GET)GetProcAddress(this->_hAModule, "ADL2_OverdriveN_FanControl_Get");
-	if (this->_ADL2_OVERDRIVEN_FANCONTROL_GET) this->_currentGeneration = 'N';
-	else {
-		this->_ADL_OVERDRIVE6_FANSPEED_GET = (ADL_OVERDRIVE6_FANSPEED_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_FanSpeed_Get");
-		if (this->_ADL_OVERDRIVE6_FANSPEED_GET) this->_currentGeneration = 6;
-		else {
-			this->_ADL_OVERDRIVE5_FANSPEED_GET = (ADL_OVERDRIVE5_FANSPEED_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_FanSpeed_Get");
-			if (this->_ADL_OVERDRIVE5_FANSPEED_GET) this->_currentGeneration = 5;
-			else return false;
-		}
-	}
-
-	switch (this->_currentGeneration) {
-	case 5: {
-		this->_ADL_OVERDRIVE5_CURRENTACTIVITY_GET = 
-			(ADL_OVERDRIVE5_CURRENTACTIVITY_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_CurrentActivity_Get");
-
-		if (!this->_ADL_OVERDRIVE5_CURRENTACTIVITY_GET) return false;
-
-		this->_ADL_OVERDRIVE5_ODPARAMETERS_GET = 
-			(ADL_OVERDRIVE5_ODPARAMETERS_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_ODParameters_Get");
-
-		if (!this->_ADL_OVERDRIVE5_ODPARAMETERS_GET) return false;
-
-		this->_ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET = 
-			(ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_ODPerformanceLevels_Get");
-
-		if (!this->_ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET) return false;
-
-		this->_ADL_OVERDRIVE5_TEMPERATURE_GET =
-			(ADL_OVERDRIVE5_TEMPERATURE_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive5_Temperature_Get");
-
-		if (!this->_ADL_OVERDRIVE5_TEMPERATURE_GET) return false;
-		break;
-	}
-	case 6: {
-		this->_ADL_OVERDRIVE6_CURRENTSTATUS_GET =
-			(ADL_OVERDRIVE6_CURRENTSTATUS_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_CurrentStatus_Get");
-
-		if (!this->_ADL_OVERDRIVE6_CURRENTSTATUS_GET) return false;
-
-		this->_ADL_OVERDRIVE6_CAPABILITIES_GET = 
-			(ADL_OVERDRIVE6_CAPABILITIES_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_Capabilities_Get");
-
-		if (!this->_ADL_OVERDRIVE6_CAPABILITIES_GET) return false;
-
-		this->_ADL_OVERDRIVE6_STATEINFO_GET =
-			(ADL_OVERDRIVE6_STATEINFO_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_StateInfo_Get");
-
-		if (!this->_ADL_OVERDRIVE6_STATEINFO_GET) return false;
-
-		this->_ADL_OVERDRIVE6_TEMPERATURE_GET =
-			(ADL_OVERDRIVE6_TEMPERATURE_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_Temperature_Get");
-
-		if (!this->_ADL_OVERDRIVE6_TEMPERATURE_GET) return false;
-
-		this->_ADL_OVERDRIVE6_VOLTAGECONTROL_GET =
-			(ADL_OVERDRIVE6_VOLTAGECONTROL_GET)GetProcAddress(this->_hAModule, "ADL_Overdrive6_VoltageControl_Get");
-
-		if (!this->_ADL_OVERDRIVE6_VOLTAGECONTROL_GET) return false;
-		break;
-	}
-	case 'N': {
-		break;
-	}
-	case 8: {
-		break;
-	}
-	}
-
 	this->_ADL_MAIN_CONTROL_DESTROY = (ADL_MAIN_CONTROL_DESTROY)GetProcAddress(this->_hAModule, "ADL_Main_Control_Destroy");
 	if (!this->_ADL_MAIN_CONTROL_DESTROY) return false;
 
@@ -171,153 +131,40 @@ bool AMD_GPU::_GetDeviceHandle() {
 	return false;
 }
 
-void AMD_GPU::_FillCoreVoltage() {
-	int result = ADL_OK;
-
-	switch (this->_currentGeneration) {
-	case 5: {
-		ADLPMActivity adlPM = { 0 };
-		adlPM.iSize = sizeof(adlPM);
-		result = this->_ADL_OVERDRIVE5_CURRENTACTIVITY_GET(this->_physAdapterIndex, &adlPM);
-		if (ADL_OK == result) {
-			this->Core.voltage = adlPM.iVddc / 1000.0;
+bool AMD_GPU::_GetCurrentGeneration() {
+	void* test = GetProcAddress(this->_hAModule, "ADL2_New_QueryPMLogData_Get");
+	if (test) this->_currentGeneration = 8;
+	else {
+		test = GetProcAddress(this->_hAModule, "ADL2_OverdriveN_FanControl_Get");
+		if (test) this->_currentGeneration = 7;
+		else {
+			test = GetProcAddress(this->_hAModule, "ADL_Overdrive6_FanSpeed_Get");
+			if (test) this->_currentGeneration = 6;
+			else {
+				test = GetProcAddress(this->_hAModule, "ADL_Overdrive5_FanSpeed_Get");
+				if (test) this->_currentGeneration = 5;
+				else return false;
+			}
 		}
-		break;
 	}
-	case 6: {
-		ADLOD6Capabilities od6Caps = { 0 };
-		result = this->_ADL_OVERDRIVE6_CAPABILITIES_GET(this->_physAdapterIndex, &od6Caps);
 
-		int currentValue = 0;
-		int defaultValue = 0;
+	return true;
+}
 
-		this->_ADL_OVERDRIVE6_VOLTAGECONTROL_GET(this->_physAdapterIndex, &currentValue, &defaultValue);
-
-		this->Core.voltage = currentValue / 1000.0;
-		break;
-	}
-	case 'N': {
-		break;
-	}
-	case 8: {
-		break;
-	}
-	}
+void AMD_GPU::_FillCoreVoltage() {
+	this->Core.voltage = this->_overdrive->GetCoreVoltage();
 }
 
 void AMD_GPU::_FillCoreTemp() {
-	switch (this->_currentGeneration) {
-	case 5: {
-		ADLTemperature adlTemp = { 0 };
-		adlTemp.iSize = sizeof(adlTemp);
-
-		this->_ADL_OVERDRIVE5_TEMPERATURE_GET(this->_physAdapterIndex, 0, &adlTemp);
-
-		this->Core.temperature = adlTemp.iTemperature / 1000;
-		break;
-	}
-	case 6: {
-		this->_ADL_OVERDRIVE6_TEMPERATURE_GET(this->_physAdapterIndex, &this->Core.temperature);
-		this->Core.temperature /= 1000;
-		break;
-	}
-	case 'N': {
-		break;
-	}
-	case 8: {
-		break;
-	}
-	}
+	this->Core.temperature = this->_overdrive->GetCoreTemp();
 }
 
 void AMD_GPU::_FillDefaultAndBoostClockInfo() {
-	int result = ADL_OK;
-	switch (this->_currentGeneration) {
-	case 5: {
-		ADLODParameters odParams = { 0 };
-		odParams.iSize = sizeof(ADLODParameters);
-
-		result = this->_ADL_OVERDRIVE5_ODPARAMETERS_GET(this->_physAdapterIndex, &odParams);
-		if (result == ADL_OK) {
-			auto totalLevels = odParams.iNumberOfPerformanceLevels;
-			int structureSize = sizeof(ADLODPerformanceLevels) + sizeof(ADLODPerformanceLevel) * (totalLevels - 1);
-			ADLODPerformanceLevels* allocLevels = (ADLODPerformanceLevels*)calloc(1, structureSize);
-			if (!allocLevels) break;
-			allocLevels->iSize = structureSize;
-
-			this->_ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET(this->_physAdapterIndex, 1, allocLevels);
-			
-			this->Core.defaultClock = allocLevels->aLevels[0].iEngineClock / 100.0;
-			this->Core.boost = allocLevels->aLevels[totalLevels - 1].iEngineClock / 100.0;
-
-			this->Memory.defaultClock = allocLevels->aLevels[0].iMemoryClock / 100.0;
-			this->Memory.boost = allocLevels->aLevels[totalLevels - 1].iMemoryClock / 100.0;
-
-			free(allocLevels);
-		}
-		break;
-	}
-	case 6: {
-		ADLOD6Capabilities od6Caps = { 0 };
-
-		result = this->_ADL_OVERDRIVE6_CAPABILITIES_GET(this->_physAdapterIndex, &od6Caps);
-		if (result == ADL_OK) {
-			auto totalLevels = od6Caps.iNumberOfPerformanceLevels;
-			int structSize = sizeof(ADLOD6StateInfo) + sizeof(ADLOD6PerformanceLevel) * (totalLevels - 1);
-			ADLOD6StateInfo* stateInfo = (ADLOD6StateInfo*)calloc(1, structSize);
-			if (!stateInfo) break;
-			stateInfo->iNumberOfPerformanceLevels = totalLevels;
-
-			this->_ADL_OVERDRIVE6_STATEINFO_GET(this->_physAdapterIndex, 1, stateInfo);
-
-			this->Core.defaultClock = stateInfo->aLevels[0].iEngineClock / 100.0;
-			this->Core.boost = stateInfo->aLevels[totalLevels - 1].iEngineClock / 100.0;
-
-			this->Memory.defaultClock = stateInfo->aLevels[0].iMemoryClock / 100.0;
-			this->Memory.boost = stateInfo->aLevels[totalLevels - 1].iMemoryClock / 100.0;
-
-			free(stateInfo);
-		}
-		break;
-	}
-	case 'N': {
-		break;
-	}
-	case 8: {
-		break;
-	}
-	}
+	this->_overdrive->GetDefaultAndBoostClockInfo(&this->Core.defaultClock, &this->Core.boost, &this->Memory.defaultClock, &this->Memory.boost);
 }
 
 void AMD_GPU::_FillClockInfo() {
-	int result = ADL_OK;
-	switch (this->_currentGeneration) {
-	case 5: {
-		ADLPMActivity adlPM = { 0 };
-		adlPM.iSize = sizeof(adlPM);
-		result = this->_ADL_OVERDRIVE5_CURRENTACTIVITY_GET(this->_physAdapterIndex, &adlPM);
-		if (ADL_OK == result) {
-			this->Memory.clock = adlPM.iMemoryClock / 100.0;
-			this->Core.clock = adlPM.iEngineClock / 100.0;
-		}
-		break;
-	}
-	case 6: {
-		ADLOD6CurrentStatus adlodCS = { 0 };
-		result = this->_ADL_OVERDRIVE6_CURRENTSTATUS_GET(this->_physAdapterIndex, &adlodCS);
-		if (ADL_OK == result) {
-			this->Memory.clock = adlodCS.iMemoryClock / 100.0;
-			this->Core.clock = adlodCS.iEngineClock / 100.0;
-		}
-		break;
-	}
-	case 'N': {
-		break;
-	}
-	case 8: {
-		break;
-	}
-	}
+	this->_overdrive->GetClockInfo(&this->Memory.clock, &this->Core.clock);
 }
 
 void AMD_GPU::_FillMemoryTypeInfo() {
@@ -331,34 +178,7 @@ void AMD_GPU::_FillMemoryTypeInfo() {
 }
 
 void AMD_GPU::_FillFanInfo() {
-	int result = ADL_OK;
-	this->Fan.speedRpm.clear();
-
-	switch (this->_currentGeneration) {
-	case 5: {
-		ADLFanSpeedValue adlFSV = { 0 };
-		adlFSV.iSize = sizeof(adlFSV);
-		adlFSV.iSpeedType = ADL_DL_FANCTRL_SPEED_TYPE_RPM;
-		result = this->_ADL_OVERDRIVE5_FANSPEED_GET(this->_physAdapterIndex, 0, &adlFSV);
-		if(ADL_OK == result)
-			this->Fan.speedRpm.push_back(adlFSV.iFanSpeed);
-		break;
-	}
-	case 6: {
-		ADLOD6FanSpeedInfo adlod6FSI = { 0 };
-		adlod6FSI.iSpeedType = ADL_OD6_FANSPEED_TYPE_RPM;
-		result = this->_ADL_OVERDRIVE6_FANSPEED_GET(this->_physAdapterIndex, &adlod6FSI);
-		if (ADL_OK == result)
-			this->Fan.speedRpm.push_back(adlod6FSI.iFanSpeedRPM);
-		break;
-	}
-	case 'N': {
-		break;
-	}
-	case 8: {
-		break;
-	}
-	}
+	this->Fan.speedRpm = this->_overdrive->GetFanInfo();
 }
 
 std::wstring AMD_GPU::_FormatPcieString(ULONG speed, ULONG width) {

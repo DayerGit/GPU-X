@@ -134,6 +134,8 @@
     <ClCompile Include="Intel\cApiWrapper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NVIDIA GPU.cpp" />
+    <ClCompile Include="Overdrive5.cpp" />
+    <ClCompile Include="Overdrive6.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AMD GPU.h" />
@@ -150,11 +152,15 @@
     <ClInclude Include="Overdrive5.h" />
     <ClInclude Include="Overdrive6.h" />
     <ClInclude Include="Overdrive8.h" />
-    <ClInclude Include="OverdriveN.h" />
+    <ClInclude Include="Overdrive7.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="VersionHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="GPU-X.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GPU-X.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

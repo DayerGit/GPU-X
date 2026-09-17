@@ -2,9 +2,9 @@
 
 #include "Overdrive.h"
 
-class Overdrive8 : public Overdrive {
+class Overdrive7 : public Overdrive {
 public:
-	Overdrive8(HMODULE _hAModule, int _physAdapterIndex) {};
+	Overdrive7(HMODULE _hAModule, int _physAdapterIndex) {};
 
 	bool LoadLib() override { return false; };
 
@@ -15,5 +15,5 @@ public:
 	void GetClockInfo(double* memory, int32_t* core) override { return; };
 	std::vector<uint32_t> GetFanInfo() override { return std::vector<uint32_t>(); };
 
-	~Overdrive8() {};
+	~Overdrive7() {};
 };

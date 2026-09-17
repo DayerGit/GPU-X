@@ -1,11 +1,17 @@
 #pragma once
 #define AMD_VENDOR_ID 0x1002
 
-#include "GPU.h"
-#include "AMD/adl_common.h"
-#include "Overdrive.h"
-
 #include <vector>
+
+#include "AMD/adl_common.h"
+
+#include "GPU.h"
+#include "Overdrive.h"
+#include "Overdrive5.h"
+#include "Overdrive6.h"
+#include "Overdrive7.h"
+#include "Overdrive8.h"
+
 
 class AMD_GPU : public GPU {
 public:
@@ -70,33 +76,16 @@ private:
 
     int _currentGeneration = 0;
 
-    ADL_OVERDRIVE5_FANSPEED_GET _ADL_OVERDRIVE5_FANSPEED_GET;
-    ADL_OVERDRIVE5_CURRENTACTIVITY_GET _ADL_OVERDRIVE5_CURRENTACTIVITY_GET;
-
-    ADL_OVERDRIVE5_ODPARAMETERS_GET _ADL_OVERDRIVE5_ODPARAMETERS_GET;
-    ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET _ADL_OVERDRIVE5_ODPERFORMANCELEVELS_GET;
-
-    ADL_OVERDRIVE5_TEMPERATURE_GET _ADL_OVERDRIVE5_TEMPERATURE_GET;
-
-
-    ADL_OVERDRIVE6_FANSPEED_GET _ADL_OVERDRIVE6_FANSPEED_GET;
-    ADL_OVERDRIVE6_CURRENTSTATUS_GET _ADL_OVERDRIVE6_CURRENTSTATUS_GET;
-
-    ADL_OVERDRIVE6_CAPABILITIES_GET _ADL_OVERDRIVE6_CAPABILITIES_GET;
-    ADL_OVERDRIVE6_STATEINFO_GET _ADL_OVERDRIVE6_STATEINFO_GET;
-
-    ADL_OVERDRIVE6_TEMPERATURE_GET _ADL_OVERDRIVE6_TEMPERATURE_GET;
-
-    ADL_OVERDRIVE6_VOLTAGECONTROL_GET _ADL_OVERDRIVE6_VOLTAGECONTROL_GET;
 
     ADL2_OVERDRIVEN_FANCONTROL_GET _ADL2_OVERDRIVEN_FANCONTROL_GET;
 
-    Overdrive* _overdrive;
+    std::unique_ptr<Overdrive> _overdrive;
 
     int _physAdapterIndex;
 
     bool _LoadLib();
     bool _GetDeviceHandle();
+    bool _GetCurrentGeneration();
 
     void _FillBIOSInfo();
     void _FillBusInfo();
