@@ -31,22 +31,18 @@ typedef int(__cdecl* ADL_OVERDRIVE6_TEMPERATURE_GET) (int iAdapterIndex, int* lp
 typedef int (*ADL_OVERDRIVE6_VOLTAGECONTROL_GET)(int iAdapterIndex, int* cur, int* def);
 
 // ---------------------------------------------------------------------------
-// OverdriveN
+// Overdrive7
 // ---------------------------------------------------------------------------
 typedef int(__cdecl* ADL2_MAIN_CONTROL_CREATE) (ADL_MAIN_MALLOC_CALLBACK callback, int iEnumConnectedAdapters, ADL_CONTEXT_HANDLE* context);
 typedef int(__cdecl* ADL2_MAIN_CONTROL_DESTROY) (ADL_CONTEXT_HANDLE context);
 
 typedef int(__cdecl* ADL2_OVERDRIVE_CAPS) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* iSupported, int* iEnabled, int* iVersion);
 typedef int(__cdecl* ADL2_OVERDRIVEN_CAPABILITIES_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNCapabilities* lpODCapabilities);
-typedef int(__cdecl* ADL2_OVERDRIVEN_CAPABILITIESX2_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNCapabilitiesX2* lpODCapabilities);
 typedef int(__cdecl* ADL2_OVERDRIVEN_PERFORMANCESTATUS_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNPerformanceStatus* lpODPerformanceStatus);
 typedef int(__cdecl* ADL2_OVERDRIVEN_FANCONTROL_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNFanControl* lpODFanControl);
 typedef int(__cdecl* ADL2_OVERDRIVEN_TEMPERATURE_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int iTemperatureType, int* iTemperature);
 typedef int(__cdecl* ADL2_OVERDRIVEN_SYSTEMCLOCKS_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNPerformanceLevels* lpODPerformanceLevels);
 typedef int(__cdecl* ADL2_OVERDRIVEN_MEMORYCLOCKS_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNPerformanceLevels* lpODPerformanceLevels);
-typedef int(__cdecl* ADL2_OVERDRIVEN_SYSTEMCLOCKSX2_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNPerformanceLevelsX2* lpODPerformanceLevels);
-typedef int(__cdecl* ADL2_OVERDRIVEN_MEMORYCLOCKSX2_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNPerformanceLevelsX2* lpODPerformanceLevels);
-typedef int(__cdecl* ADL2_OVERDRIVEN_POWERLIMIT_GET)(ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLODNPowerLimitSetting* lpODPowerLimit);
 
 // ---------------------------------------------------------------------------
 // Overdrive8

@@ -25,6 +25,9 @@
     <Filter Include="Файлы заголовков\AMD">
       <UniqueIdentifier>{14fac30c-f5a9-4a3a-bbc9-922d50152b58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Исходные файлы\AMD Overdrive">
+      <UniqueIdentifier>{67406889-10f7-47a7-a029-6383855d62f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -47,6 +50,18 @@
     </ClCompile>
     <ClCompile Include="Intel\cApiWrapper.cpp">
       <Filter>Исходные файлы\Intel</Filter>
+    </ClCompile>
+    <ClCompile Include="Overdrive5.cpp">
+      <Filter>Исходные файлы\AMD Overdrive</Filter>
+    </ClCompile>
+    <ClCompile Include="Overdrive6.cpp">
+      <Filter>Исходные файлы\AMD Overdrive</Filter>
+    </ClCompile>
+    <ClCompile Include="Overdrive7.cpp">
+      <Filter>Исходные файлы\AMD Overdrive</Filter>
+    </ClCompile>
+    <ClCompile Include="Overdrive8.cpp">
+      <Filter>Исходные файлы\AMD Overdrive</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -92,14 +107,22 @@
     <ClInclude Include="Overdrive6.h">
       <Filter>Файлы заголовков\AMD</Filter>
     </ClInclude>
-    <ClInclude Include="OverdriveN.h">
+    <ClInclude Include="Overdrive8.h">
       <Filter>Файлы заголовков\AMD</Filter>
     </ClInclude>
-    <ClInclude Include="Overdrive8.h">
+    <ClInclude Include="resource.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Overdrive7.h">
       <Filter>Файлы заголовков\AMD</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="GPU-X.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GPU-X.rc">
+      <Filter>Файлы ресурсов</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

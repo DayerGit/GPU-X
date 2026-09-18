@@ -5,6 +5,8 @@
 #include <windows.h>
 #include "AMD/adl_common.h"
 
+void* __stdcall ADL_Main_Memory_Alloc(int iSize);
+
 class Overdrive {
 public:
 	virtual bool LoadLib() = 0;

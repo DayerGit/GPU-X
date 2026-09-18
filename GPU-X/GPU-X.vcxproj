@@ -136,6 +136,8 @@
     <ClCompile Include="NVIDIA GPU.cpp" />
     <ClCompile Include="Overdrive5.cpp" />
     <ClCompile Include="Overdrive6.cpp" />
+    <ClCompile Include="Overdrive7.cpp" />
+    <ClCompile Include="Overdrive8.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AMD GPU.h" />

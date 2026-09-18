@@ -244,7 +244,7 @@ LRESULT WINAPI MyButtonWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
 
 struct CustomComboBoxInfo {
-    int currentIndex, currentState;
+    int currentIndex, currentState, mouseOn;
     std::vector<std::wstring> strings;
     HRGN ComboBoxRegion;
     HFONT hFont;
@@ -321,13 +321,17 @@ LRESULT WINAPI MyComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
                     rcItem.bottom = currentY;
                     rcItem.top = currentY - ComboBoxHeight;
 
+                    if (i == ccbi->mouseOn) {
+                        auto oldBr = SelectObject(WindowDC, GetStockBrush(GRAY_BRUSH));
+                        Rectangle(WindowDC, rcItem.left - indentComboBox, rcItem.top, rcItem.right + indentComboBox, rcItem.bottom);
+                        SelectObject(WindowDC, oldBr);
+                    }
+
                     DrawTextW(WindowDC, ccbi->strings[i].c_str(), -1, &rcItem, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
                     if (i == ccbi->currentIndex) {
                         auto oldBr = SelectObject(WindowDC, themeColorBrush);
-
                         Rectangle(WindowDC, 5, i * ComboBoxHeight + 10, 10, i * ComboBoxHeight + 25);
-
                         SelectObject(WindowDC, oldBr);
                     }
 
@@ -394,6 +398,14 @@ LRESULT WINAPI MyComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
             ccbi->ComboBoxRegion = CreateRoundRectRgn(0, 0, cx, cy, ComboBoxRound, ComboBoxRound);
             SetWindowRgn(hwnd, ccbi->ComboBoxRegion, TRUE);
             InvalidateRect(hwnd, NULL, TRUE);
+        }
+        break;
+    }
+    case WM_MOUSEMOVE: {
+        int curY = GET_Y_LPARAM(lparam);
+        if (curY / ComboBoxHeight != ccbi->mouseOn) {
+            ccbi->mouseOn = curY / ComboBoxHeight;
+            InvalidateRect(hwnd, 0, 0);
         }
         break;
     }
@@ -516,6 +528,7 @@ int main() {
 
     for (const auto& i : res) {
         ComboBox_AddString(CardsListComboBox, i->GetDeviceName().c_str());
+
         std::wcout << std::setw(5) << std::setfill(L'=') << " " << i->GetDeviceName() << " " << std::setw(5) << std::setfill(L'=') << " " << std::endl;
         std::wcout << "  * DeviceID: " << i->GetDeviceID() << std::endl;
         std::wcout << "  * Revision: " << i->GetRevision() << std::endl;

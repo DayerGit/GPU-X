@@ -4,6 +4,10 @@
 
 #include <pciprop.h>
 
+void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
+	return malloc(iSize);
+}
+
 AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance)
 	: GPU(pDXGIAdapter, AdapterLUID, index, vkInstance) 
 {
@@ -57,10 +61,6 @@ AMD_GPU::AMD_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInst
 	this->_FillDefaultAndBoostClockInfo();
 	this->_FillCoreTemp();
 	this->_FillCoreVoltage();
-}
-
-void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
-	return malloc(iSize);
 }
 
 void AMD_GPU::UpdateSensors() {
