@@ -4,6 +4,22 @@
 //
 #define IDS_GRAPHICS_CARD               101
 #define IDS_SENSORS                     102
+#define IDS_NAME                        103
+#define IDS_REVISION                    104
+#define IDS_DEVICEID                    105
+#define IDS_BIOS_VERSION                106
+#define IDS_DRIVER_DATE                 107
+#define IDS_DRIVER_VERSION              108
+#define IDS_BUS                         109
+#define IDS_MEM_SIZE                    110
+#define IDS_MEM_TYPE                    111
+#define IDS_GPU_CLOCK                   112
+#define IDS_MEM                         113
+#define IDS_BOOST                       114
+#define IDS_DEFAULT_CLOCK               115
+#define IDS_RESIZABLE_BAR               116
+#define IDS_DX_SUPPORT                  117
+#define IDS_SUPPORT                     118
 
 // Next default values for new objects
 // 

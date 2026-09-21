@@ -128,25 +128,38 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AMD GPU.cpp" />
+    <ClCompile Include="Button.cpp" />
+    <ClCompile Include="ComboBox.cpp" />
+    <ClCompile Include="DPI.cpp" />
+    <ClCompile Include="Globals.cpp" />
     <ClCompile Include="GPU.cpp" />
     <ClCompile Include="GPUFactory.cpp" />
     <ClCompile Include="Intel GPU.cpp" />
     <ClCompile Include="Intel\cApiWrapper.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="NVIDIA GPU.cpp" />
     <ClCompile Include="Overdrive5.cpp" />
     <ClCompile Include="Overdrive6.cpp" />
     <ClCompile Include="Overdrive7.cpp" />
     <ClCompile Include="Overdrive8.cpp" />
+    <ClCompile Include="StringManager.cpp" />
+    <ClCompile Include="StringManager.h" />
+    <ClCompile Include="WindowHelpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AMD GPU.h" />
     <ClInclude Include="AMD\adl_common.h" />
     <ClInclude Include="AMD\adl_sdk.h" />
+    <ClInclude Include="Button.h" />
+    <ClInclude Include="ComboBox.h" />
+    <ClInclude Include="CommonID.h" />
+    <ClInclude Include="DPI.h" />
     <ClInclude Include="GPU.h" />
     <ClInclude Include="GPUFactory.h" />
     <ClInclude Include="Intel GPU.h" />
     <ClInclude Include="Intel\igcl_api.h" />
+    <ClInclude Include="MainWindow.h" />
     <ClInclude Include="NVIDIA\nvapi_common.h" />
     <ClInclude Include="NVIDIA GPU.h" />
     <ClInclude Include="NVIDIA\nvapi.h" />
@@ -156,7 +169,10 @@
     <ClInclude Include="Overdrive8.h" />
     <ClInclude Include="Overdrive7.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Globals.h" />
+    <ClInclude Include="Themes.h" />
     <ClInclude Include="VersionHelper.h" />
+    <ClInclude Include="WindowHelpers.h" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="GPU-X.manifest" />

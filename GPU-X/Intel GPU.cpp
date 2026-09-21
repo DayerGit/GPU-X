@@ -125,6 +125,7 @@ std::wstring Intel_GPU::_MemTypeToString(ctl_mem_type_t mem_type) {
     case CTL_MEM_TYPE_GDDR7: return L"GDDR7";
     case CTL_MEM_TYPE_UNKNOWN: return L"UNKNOWN";
     }
+    return L"UNKNOWN";
 }
 
 void Intel_GPU::_FillFromMemoryProperties() {
