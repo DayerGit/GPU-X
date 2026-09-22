@@ -17,7 +17,8 @@ MainWindow::MainWindowClassExtra MainWindow::_mwClsExtra;
 std::vector<std::unique_ptr<GPU>> MainWindow::_vectorOfGPUs;
 
 bool MainWindow::Init(std::vector<std::unique_ptr<GPU>>&& vectorOfGPUs) {
-    MainWindow::_wndClass = CreateWindowClassW(L"GPUXWinClass", MainWindow::MainWindowProc, GetStockBrush(BLACK_BRUSH), IDC_ARROW, 0, 0);
+    MainWindow::_wndClass = CreateWindowClassW(L"GPUXWinClass", MainWindow::MainWindowProc, 
+        GetStockBrush(BLACK_BRUSH), IDC_ARROW, (LPWSTR) IDI_ICON1, 0);
     if (MainWindow::_wndClass) {
         MainWindow::_mwClsExtra.hBrush = CreateSolidBrush(currentTheme.standartGrayColor);
         MainWindow::_mwClsExtra.hCurrentThemeBrush = CreateSolidBrush(globalThemeColor);
