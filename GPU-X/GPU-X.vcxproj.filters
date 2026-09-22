@@ -167,7 +167,7 @@
     <ClInclude Include="Themes.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="DPI.h">
+    <ClInclude Include="DPIManager.h">
       <Filter>Файлы заголовков\UI</Filter>
     </ClInclude>
   </ItemGroup>

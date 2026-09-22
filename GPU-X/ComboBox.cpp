@@ -4,6 +4,7 @@
 #include "WindowHelpers.h"
 #include "Themes.h"
 #include "Globals.h"
+#include "DPIManager.h"
 
 
 ATOM MyComboBox::_wndClass;
@@ -17,11 +18,11 @@ bool MyComboBox::Init() {
         MyComboBox::_cbbClsExtra.brush = CreateSolidBrush(currentTheme.comboBoxColor);
         MyComboBox::_cbbClsExtra.pen = CreatePen(PS_SOLID, 1, currentTheme.comboBoxColor);
         MyComboBox::_cbbClsExtra.themeColorBrush = CreateSolidBrush(globalThemeColor);
-        MyComboBox::_cbbClsExtra.font = CreateFontW(8, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+        MyComboBox::_cbbClsExtra.font = CreateFontW(DPIManager::Scale(8), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
             OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe MDL2 Assets");
 
         if (!MyComboBox::_cbbClsExtra.font) {
-            MyComboBox::_cbbClsExtra.font = CreateFontW(8, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+            MyComboBox::_cbbClsExtra.font = CreateFontW(DPIManager::Scale(8), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
                 OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Marlett");
         }
     }
@@ -51,17 +52,19 @@ void MyComboBox::Minimize(HWND hwnd, MyComboBox::ComboBoxWindowExtra* windowInfo
     ScreenToClient(hParent, &downRight);
 
     int X = topLeft.x;
-    int Y = downRight.y - ComboBoxHeight;
-    int cy = ComboBoxHeight;
+    int Y = downRight.y - DPIManager::Scale(ComboBoxHeight);
+    int cy = DPIManager::Scale(ComboBoxHeight);
 
     if (needUpdateCursorPos) {
         int clickY = GET_Y_LPARAM(lparam);
-        windowInfo->currentIndex = clickY / ComboBoxHeight;
+        windowInfo->currentIndex = clickY / DPIManager::Scale(ComboBoxHeight);
     }
 
     windowInfo->currentState = MyComboBox::ComboBoxState::Minimize;
 
     MyComboBox::UpdateWindowPosAndRegion(hwnd, X, Y, cx, cy, windowInfo);
+
+    SendMessageW(GetParent(hwnd), WM_COMMAND, MAKEWPARAM(0, CBN_SELCHANGE), 0);
 }
 
 LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -78,7 +81,7 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
         RECT wndClient = { 0 };
         GetClientRect(hwnd, &wndClient);
 
-        HRGN ComboBoxRegion = CreateRoundRectRgn(0, 0, wndClient.right, ComboBoxHeight, ComboBoxRound, ComboBoxRound);
+        HRGN ComboBoxRegion = CreateRoundRectRgn(0, 0, wndClient.right, DPIManager::Scale(ComboBoxHeight), ComboBoxRound, ComboBoxRound);
         SetWindowRgn(hwnd, ComboBoxRegion, TRUE);
 
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)ccbi);
@@ -108,8 +111,8 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
 
             if (windowInfo->currentState == MyComboBox::ComboBoxState::Minimize) {
                 RECT rcText = rcClient;
-                rcText.left += indentComboBox;
-                rcText.right -= indentComboBox;
+                rcText.left += DPIManager::Scale(indentComboBox);
+                rcText.right -= DPIManager::Scale(indentComboBox);
 
                 DrawTextW(WindowDC, windowInfo->strings[windowInfo->currentIndex].c_str(), -1, &rcText, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
@@ -121,11 +124,13 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
                 int currentY = rcClient.bottom;
 
                 for (int i = windowInfo->strings.size() - 1; i >= 0; i--) {
-                    RECT rcItem = { rcClient.left + indentComboBox, currentY - ComboBoxHeight, rcClient.right - indentComboBox, currentY };
+                    RECT rcItem = { rcClient.left + DPIManager::Scale(indentComboBox), currentY - DPIManager::Scale(ComboBoxHeight),
+                        rcClient.right - DPIManager::Scale(indentComboBox), currentY };
 
                     if (i == windowInfo->mouseOn) {
                         auto oldBr = SelectObject(WindowDC, GetStockBrush(GRAY_BRUSH));
-                        Rectangle(WindowDC, rcItem.left - indentComboBox, rcItem.top, rcItem.right + indentComboBox, rcItem.bottom);
+                        Rectangle(WindowDC, rcItem.left - DPIManager::Scale(indentComboBox), 
+                            rcItem.top, rcItem.right + DPIManager::Scale(indentComboBox), rcItem.bottom);
                         SelectObject(WindowDC, oldBr);
                     }
 
@@ -133,11 +138,12 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
 
                     if (i == windowInfo->currentIndex) {
                         auto oldBr = SelectObject(WindowDC, MyComboBox::_cbbClsExtra.themeColorBrush);
-                        Rectangle(WindowDC, 5, i * ComboBoxHeight + 10, 10, i * ComboBoxHeight + 25);
+                        Rectangle(WindowDC, DPIManager::Scale(5), DPIManager::Scale(i * ComboBoxHeight + 10),
+                            DPIManager::Scale(10), DPIManager::Scale(i * ComboBoxHeight + 25));
                         SelectObject(WindowDC, oldBr);
                     }
 
-                    currentY -= ComboBoxHeight;
+                    currentY -= DPIManager::Scale(ComboBoxHeight);
                 }
             }
         }
@@ -168,7 +174,7 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
                 POINT topLeft = { thisRect.left, thisRect.top };
                 ScreenToClient(hParent, &topLeft);
 
-                int dropDownHeight = ComboBoxHeight * (windowInfo->strings.size() - 1);
+                int dropDownHeight = DPIManager::Scale(ComboBoxHeight) * (windowInfo->strings.size() - 1);
                 X = topLeft.x;
                 Y = topLeft.y - dropDownHeight;
                 cy = dropDownHeight + currentHeight;
@@ -184,8 +190,8 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
     case WM_MOUSEMOVE: {
         if (windowInfo) {
             int curY = GET_Y_LPARAM(lparam);
-            if (curY / ComboBoxHeight != windowInfo->mouseOn) {
-                windowInfo->mouseOn = curY / ComboBoxHeight;
+            if (curY / DPIManager::Scale(ComboBoxHeight) != windowInfo->mouseOn) {
+                windowInfo->mouseOn = curY / DPIManager::Scale(ComboBoxHeight);
                 InvalidateRect(hwnd, 0, 0);
             }
         }

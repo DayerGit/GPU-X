@@ -8,6 +8,7 @@
 #include "WindowHelpers.h"
 #include "Themes.h"
 #include "StringManager.h"
+#include "DPIManager.h"
 
 #include "resource.h"
 
@@ -22,7 +23,7 @@ bool MainWindow::Init(std::vector<std::unique_ptr<GPU>>&& vectorOfGPUs) {
         MainWindow::_mwClsExtra.hBrush = CreateSolidBrush(currentTheme.standartGrayColor);
         MainWindow::_mwClsExtra.hPen = CreatePen(PS_SOLID, 1, currentTheme.standartGrayColor);
         MainWindow::_mwClsExtra.hBorderPen = CreatePen(PS_SOLID, 1, globalThemeColor);
-        MainWindow::_mwClsExtra.hNormalFont = CreateFontW(16, 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE, DEFAULT_CHARSET, 
+        MainWindow::_mwClsExtra.hNormalFont = CreateFontW(DPIManager::Scale(16), 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
             OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 
         MainWindow::_vectorOfGPUs = std::move(vectorOfGPUs);
@@ -40,12 +41,12 @@ void MainWindow::InitCardList(HWND hwnd) {
 }
 
 void MainWindow::DrawLabel(int x, int y, int w, const std::wstring& text, HDC WindowDC) {
-    RECT r = { x, y, x + w, y + MainWindow::_mwClsExtra.rowHeight };
+    RECT r = { x, y, x + w, y + DPIManager::Scale(MainWindow::_mwClsExtra.rowHeight) };
     DrawTextW(WindowDC, text.c_str(), -1, &r, DT_SINGLELINE | DT_VCENTER | DT_RIGHT);
 }
 
 void MainWindow::DrawValueField(int x, int y, int w, const std::wstring& value, HDC WindowDC) {
-    RECT r = { x, y, x + w, y + MainWindow::_mwClsExtra.rowHeight };
+    RECT r = { x, y, x + w, y + DPIManager::Scale(MainWindow::_mwClsExtra.rowHeight) };
 
     auto oldBrush = SelectObject(WindowDC, GetStockObject(NULL_BRUSH));
     Rectangle(WindowDC, r.left, r.top, r.right, r.bottom);
@@ -55,8 +56,8 @@ void MainWindow::DrawValueField(int x, int y, int w, const std::wstring& value, 
 }
 
 void MainWindow::DrawTechCheckbox(int x, int y, int w, const std::wstring& name, bool checked, HDC WindowDC) {
-    RECT rBox = { x, y + 4, x + 14, y + 18 };
-    RECT rText = { x + 20, y, x + w, y + MainWindow::_mwClsExtra.rowHeight };
+    RECT rBox = { x, y + DPIManager::Scale(4), x + DPIManager::Scale(14), y + DPIManager::Scale(18) };
+    RECT rText = { x + DPIManager::Scale(20), y, x + w, y + DPIManager::Scale(MainWindow::_mwClsExtra.rowHeight) };
 
     auto oldBrush = SelectObject(WindowDC, GetStockObject(NULL_BRUSH));
     Rectangle(WindowDC, rBox.left, rBox.top, rBox.right, rBox.bottom);
@@ -82,79 +83,82 @@ void MainWindow::DrawGraphicsCard(HDC WindowDC) {
     auto oldPen = SelectObject(WindowDC, MainWindow::_mwClsExtra.hBorderPen);
     auto oldFont = SelectObject(WindowDC, MainWindow::_mwClsExtra.hNormalFont);
 
-    const int startX = MainWindow::_mwClsExtra.startX;
-    const int labelW = MainWindow::_mwClsExtra.labelW;
-    const int rowH = MainWindow::_mwClsExtra.rowHeight;
-    const int rightPad = MainWindow::_mwClsExtra.rightPad;
-    const int gap = MainWindow::_mwClsExtra.gap;
-    const int rightEdge = MainWindow::_mwClsExtra.rightEdge;
+    const int startX = DPIManager::Scale(MainWindow::_mwClsExtra.startX);
+    const int labelW = DPIManager::Scale(MainWindow::_mwClsExtra.labelW);
+    const int rowH = DPIManager::Scale(MainWindow::_mwClsExtra.rowHeight);
+    const int rightPad = DPIManager::Scale(MainWindow::_mwClsExtra.rightPad);
+    const int gap = DPIManager::Scale(MainWindow::_mwClsExtra.gap);
+    const int correction = DPIManager::Scale(MainWindow::_mwClsExtra.correction);
+    const int rightEdge = DPIManager::Scale(MainWindow::_mwClsExtra.rightEdge);
 
-    int y = MainWindow::_mwClsExtra.startY;
+    int y = DPIManager::Scale(MainWindow::_mwClsExtra.startY);
 
     auto at = [&](int x0) -> MainWindow::Row { return MainWindow::Row{ WindowDC, x0, y, rightEdge, gap }; };
 
     at(startX).label(StringManager::GetStringByID(IDS_NAME), labelW).valueToEdge(gpu->GetDeviceName());
-    y += rowH + 7;
+    y += rowH + gap;
 
     at(startX).label(StringManager::GetStringByID(IDS_REVISION), labelW)
-        .value(gpu->GetRevision(), 50)
-        .label(StringManager::GetStringByID(IDS_DEVICEID), 50)
-        .value(gpu->GetDeviceID(), 160);
-    y += rowH + 7;
+        .value(gpu->GetRevision(), DPIManager::Scale(50))
+        .label(StringManager::GetStringByID(IDS_DEVICEID), DPIManager::Scale(50))
+        .value(gpu->GetDeviceID(), DPIManager::Scale(160));
+    y += rowH + gap;
 
-    at(startX-5).label(StringManager::GetStringByID(IDS_BIOS_VERSION), labelW+5).valueToEdge(gpu->GetBIOSVersion());
-    y += rowH + 7;
+    at(startX- correction)
+        .label(StringManager::GetStringByID(IDS_BIOS_VERSION), labelW+ correction)
+        .valueToEdge(gpu->GetBIOSVersion());
+    y += rowH + gap;
 
     at(startX).label(StringManager::GetStringByID(IDS_DRIVER_DATE), labelW)
-        .value(gpu->GetDriverDate(), 70, 73 + gap)
-        .label(StringManager::GetStringByID(IDS_DRIVER_VERSION), 73)
-        .value(gpu->GetDriverVersion(), 115);
-    y += rowH + 7;
+        .value(gpu->GetDriverDate(), DPIManager::Scale(70), DPIManager::Scale(73) + gap)
+        .label(StringManager::GetStringByID(IDS_DRIVER_VERSION), DPIManager::Scale(73))
+        .value(gpu->GetDriverVersion(), DPIManager::Scale(115));
+    y += rowH + gap;
 
     at(startX).label(StringManager::GetStringByID(IDS_BUS), labelW)
         .valueToEdge(gpu->GetBusCurrent() + L"/" + gpu->GetBusMaximum());
-    y += rowH + 7;
+    y += rowH + gap;
 
-    at(startX - 5).label(StringManager::GetStringByID(IDS_MEM_SIZE), labelW + 5)
-        .value(std::to_wstring(gpu->GetMemSize()) + L" MB", 77, 73 + gap)
-        .label(StringManager::GetStringByID(IDS_MEM_TYPE), 73)
-        .value(gpu->GetMemoryType(), 115);
-    y += rowH + 15;
+    at(startX - correction).label(StringManager::GetStringByID(IDS_MEM_SIZE), labelW + correction)
+        .value(std::to_wstring(gpu->GetMemSize()) + L" MB", DPIManager::Scale(77), DPIManager::Scale(73) + gap)
+        .label(StringManager::GetStringByID(IDS_MEM_TYPE), DPIManager::Scale(73))
+        .value(gpu->GetMemoryType(), DPIManager::Scale(115));
+    y += rowH + 2*gap;
 
-    at(startX-5).label(StringManager::GetStringByID(IDS_GPU_CLOCK), labelW+5)
-        .value(std::to_wstring(gpu->GetCoreClock()) + L" MHz", 77, 60)
-        .label(StringManager::GetStringByID(IDS_MEM), 50, 53)
-        .value(std::to_wstring(gpu->GetMemoryClock()) + L" MHz", 65, 35)
-        .label(StringManager::GetStringByID(IDS_BOOST), 65, 68)
-        .value(std::to_wstring(gpu->GetBoostCoreClock()) + L" MHz", 65);
-    y += rowH + 7;
+    at(startX- correction).label(StringManager::GetStringByID(IDS_GPU_CLOCK), labelW+ correction)
+        .value(std::to_wstring(gpu->GetCoreClock()) + L" MHz", DPIManager::Scale(77), DPIManager::Scale(60))
+        .label(StringManager::GetStringByID(IDS_MEM), DPIManager::Scale(50), DPIManager::Scale(53))
+        .value(std::to_wstring(gpu->GetMemoryClock()) + L" MHz", DPIManager::Scale(65), DPIManager::Scale(35))
+        .label(StringManager::GetStringByID(IDS_BOOST), DPIManager::Scale(65), DPIManager::Scale(68))
+        .value(std::to_wstring(gpu->GetBoostCoreClock()) + L" MHz", DPIManager::Scale(65));
+    y += rowH + gap;
 
-    at(startX-5).label(StringManager::GetStringByID(IDS_DEFAULT_CLOCK), labelW+5)
-        .value(std::to_wstring(gpu->GetDefaultCoreClock()) + L" MHz", 77, 60)
-        .label(StringManager::GetStringByID(IDS_MEM), 50, 53)
-        .value(std::to_wstring(gpu->GetDefaultMemoryClock()) + L" MHz", 65, 35)
-        .label(StringManager::GetStringByID(IDS_BOOST), 65, 68)
-        .value(std::to_wstring(gpu->GetBoostMemoryClock()) + L" MHz", 65);
-    y += rowH + 15;
+    at(startX- correction).label(StringManager::GetStringByID(IDS_DEFAULT_CLOCK), labelW+ correction)
+        .value(std::to_wstring(gpu->GetDefaultCoreClock()) + L" MHz", DPIManager::Scale(77), DPIManager::Scale(60))
+        .label(StringManager::GetStringByID(IDS_MEM), DPIManager::Scale(50), DPIManager::Scale(53))
+        .value(std::to_wstring(gpu->GetDefaultMemoryClock()) + L" MHz", DPIManager::Scale(65), DPIManager::Scale(35))
+        .label(StringManager::GetStringByID(IDS_BOOST), DPIManager::Scale(65), DPIManager::Scale(68))
+        .value(std::to_wstring(gpu->GetBoostMemoryClock()) + L" MHz", DPIManager::Scale(65));
+    y += rowH + gap;
 
-    at(startX - 5).label(StringManager::GetStringByID(IDS_RESIZABLE_BAR), labelW + 5)
-        .value(gpu->GetHasResizableBAR() ? L"Enable" : L"Disable", 77, 95 + gap)
-        .label(StringManager::GetStringByID(IDS_DX_SUPPORT), 95)
-        .value(gpu->GetDXMaxVersion(), 70);
-    y += rowH + 30;
+    at(startX - correction).label(StringManager::GetStringByID(IDS_RESIZABLE_BAR), labelW + correction)
+        .value(gpu->GetHasResizableBAR() ? L"Enable" : L"Disable", DPIManager::Scale(77), DPIManager::Scale(95) + gap)
+        .label(StringManager::GetStringByID(IDS_DX_SUPPORT), DPIManager::Scale(95))
+        .value(gpu->GetDXMaxVersion(), DPIManager::Scale(70));
+    y += rowH + 3*gap;
 
-    at(startX - 20).label(StringManager::GetStringByID(IDS_SUPPORT), labelW)
-        .check(L"OpenCL", labelW, gpu->GetHasOpenCL(), labelW + 5)
-        .check(L"CUDA", 55, gpu->GetHasCUDA(), 55 + 7)
-        .check(L"PhysX", 55, gpu->GetHasPhysX())
-        .check(L"DirectCompute", 110, gpu->GetHasDirectCompute());
-    y += rowH + 7;
+    at(startX - 4*correction).label(StringManager::GetStringByID(IDS_SUPPORT), labelW)
+        .check(L"OpenCL", labelW, gpu->GetHasOpenCL(), labelW + correction)
+        .check(L"CUDA", DPIManager::Scale(55), gpu->GetHasCUDA(), DPIManager::Scale(62))
+        .check(L"PhysX", DPIManager::Scale(55), gpu->GetHasPhysX())
+        .check(L"DirectCompute", DPIManager::Scale(110), gpu->GetHasDirectCompute());
+    y += rowH + gap;
 
-    at(startX - 20 + labelW + gap)
+    at(startX - 4*correction + labelW + gap)
         .check(L"Vulkan", labelW, gpu->GetHasVulkan(), labelW)
-        .check(L"OpenGL 4.6", 85, gpu->GetHasVulkan(), 85)
-        .check(L"DirectML", 67, gpu->GetHasDirectML(), 67 + 7)
-        .check(L"RayTracing", 100, gpu->GetHasRayTracing());
+        .check(L"OpenGL 4.6", DPIManager::Scale(85), gpu->GetHasVulkan(), DPIManager::Scale(85))
+        .check(L"DirectML", DPIManager::Scale(67), gpu->GetHasDirectML(), DPIManager::Scale(74))
+        .check(L"RayTracing", DPIManager::Scale(100), gpu->GetHasRayTracing());
 
     SelectObject(WindowDC, oldFont);
     SelectObject(WindowDC, oldPen);
@@ -169,7 +173,7 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
     case WM_CREATE: {
         if (IsWindows10OrGreater()) {
             MARGINS margins = { 0 };
-            margins.cyBottomHeight = IsWindows11OrGreater() ? AppSizeY : 0;
+            margins.cyBottomHeight = IsWindows11OrGreater() ? DPIManager::Scale(AppSizeY) : 0;
             DwmExtendFrameIntoClientArea(hwnd, &margins);
 
             const auto DWMSBT_TABBEDWINDOW = 4;
@@ -183,10 +187,10 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
     }
     case WM_GETMINMAXINFO: {
         MINMAXINFO* pInfo = (MINMAXINFO*)lparam;
-        pInfo->ptMinTrackSize.x = AppSizeX;
-        pInfo->ptMaxTrackSize.x = AppSizeX;
-        pInfo->ptMinTrackSize.y = AppSizeY;
-        pInfo->ptMaxTrackSize.y = AppSizeY;
+        pInfo->ptMinTrackSize.x = DPIManager::Scale(AppSizeX);
+        pInfo->ptMaxTrackSize.x = DPIManager::Scale(AppSizeX);
+        pInfo->ptMinTrackSize.y = DPIManager::Scale(AppSizeY);
+        pInfo->ptMaxTrackSize.y = DPIManager::Scale(AppSizeY);
         break;
     }
     case WM_NCCALCSIZE: {
@@ -201,7 +205,7 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
                 POINT pt = { GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
                 ScreenToClient(hwnd, &pt);
 
-                if (pt.y < 30) return HTCAPTION;
+                if (pt.y < DPIManager::Scale(30)) return HTCAPTION;
                 else return HTCLIENT;
             }
             return lRet;
@@ -217,7 +221,8 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
         auto oldBrush = SelectObject(WindowDC, MainWindow::_mwClsExtra.hBrush);
         auto oldPen = SelectObject(WindowDC, MainWindow::_mwClsExtra.hPen);
 
-        Rectangle(WindowDC, 5, TabHeight + 15, AppSizeX - 5, AppSizeY - ComboBoxHeight - 15);
+        Rectangle(WindowDC, DPIManager::Scale(5), DPIManager::Scale(TabHeight + 15), DPIManager::Scale(AppSizeX - 5), 
+            DPIManager::Scale(AppSizeY - ComboBoxHeight - 15));
 
         switch (MainWindow::_mwClsExtra.currentTab) {
         case 0: {
@@ -242,6 +247,9 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
     }
     case WM_COMMAND: {
         if ((HMENU)wparam == CLOSE_BUTTON) DestroyWindow(hwnd);
+        else if (HIWORD(wparam) == CBN_SELCHANGE) {
+            InvalidateRect(hwnd, 0, 1);
+        }
         else {
             MainWindow::_mwClsExtra.currentTab = wparam;
             InvalidateRect(hwnd, 0, 1);

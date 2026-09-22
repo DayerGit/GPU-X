@@ -1,12 +1,17 @@
-//#include <shellscalingapi.h>
-//#include "DPI.h"
-//
-//int ScaleForDPI(int value, UINT dpi) {
-//	return MulDiv(value, dpi, 96);
-//}
-//
-//UINT GetMonitorDPI(HMONITOR hMonitor) {
-//	UINT dpiX, dpiY;
-//	if (SUCCEEDED(GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY))) return dpiX;
-//	return 96;
-//}
+#include <shellscalingapi.h>
+#include "DPIManager.h"
+
+UINT DPIManager::_currentDPI;
+
+int DPIManager::Scale(int value) {
+	return MulDiv(value, DPIManager::_currentDPI, 96);
+}
+
+void DPIManager::Init() {
+	SetProcessDPIAware();
+	UINT dpiX, dpiY;
+	HMONITOR hMonitor = MonitorFromWindow(NULL, MONITOR_DEFAULTTOPRIMARY);
+	HRESULT hRes = GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
+	if (SUCCEEDED(hRes)) DPIManager::_currentDPI = dpiX;
+	else DPIManager::_currentDPI = 96;
+}

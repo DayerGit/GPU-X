@@ -28,6 +28,7 @@ private:
 		const int labelW = 65;
 		const int rightPad = 30;
 		const int gap = 10;
+		const int correction = 5;
 		const int rightEdge = AppSizeX - rightPad;
 	};
 	static MainWindowClassExtra _mwClsExtra;
