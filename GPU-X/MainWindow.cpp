@@ -317,6 +317,7 @@ void MainWindow::Release() {
         DeleteObject(MainWindow::_mwClsExtra.hNormalFont);
         DeleteObject(MainWindow::_mwClsExtra.hBorderPen);
         DeleteObject(MainWindow::_mwClsExtra.hPen);
+        DeleteObject(MainWindow::_mwClsExtra.hCurrentThemeBrush);
         DeleteObject(MainWindow::_mwClsExtra.hBrush);
         UnregisterClassW(L"GPUXWinClass", 0);
     }
