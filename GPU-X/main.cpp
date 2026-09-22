@@ -17,9 +17,10 @@
 
 #include "resource.h"
 
-int main() {
+int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow) {
+
     DPIManager::Init();
-    StringManager::ReadStrings(18);
+    StringManager::ReadStrings(21);
 
     GetCurrentTheme();
 
@@ -68,7 +69,7 @@ int main() {
         SetWindowFont(CloseButton, hControlFont, 1);
     }
 
-    ShowWindow(Window, SW_SHOWNORMAL);
+    ShowWindow(Window, cmdshow);
 
     MSG msg;
     while (GetMessageW(&msg, 0, 0, 0)) {

@@ -50,13 +50,4 @@ typedef int(__cdecl* ADL2_OVERDRIVEN_MEMORYCLOCKS_GET) (ADL_CONTEXT_HANDLE conte
 typedef int(__cdecl* ADL2_OVERDRIVE8_INIT_SETTING_GET)(ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLOD8InitSetting* lpInitSetting);
 typedef int(__cdecl* ADL2_OVERDRIVE8_CURRENT_SETTING_GET)(ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLOD8CurrentSetting* lpCurrentSetting);
 
-typedef int(__cdecl* ADL2_OVERDRIVE8_INIT_SETTINGX2_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, int* lpOverdrive8Capabilities, 
-    int* lpNumberOfFeatures, ADLOD8SingleInitSetting** lppInitSettingList);
-
-typedef int(__cdecl* ADL2_OVERDRIVE8_CURRENT_SETTINGX2_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, 
-    int* lpNumberOfFeatures, int** lppCurrentSettingList);
-
-typedef int(__cdecl* ADL2_OVERDRIVE8_CURRENT_SETTINGX3_GET) (ADL_CONTEXT_HANDLE context, int iAdapterIndex, 
-    int* lpFeatureNotAdjustableBits, int* lpNumberOfSettings, int** lppCurrentSettingList, int iOption);
-
 typedef int(__cdecl* ADL2_NEW_QUERYPMLOGDATA_GET)(ADL_CONTEXT_HANDLE context, int iAdapterIndex, ADLPMLogDataOutput* lpDataOutput);

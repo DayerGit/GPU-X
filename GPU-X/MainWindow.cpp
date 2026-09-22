@@ -8,7 +8,6 @@
 #include "WindowHelpers.h"
 #include "Themes.h"
 #include "StringManager.h"
-#include "DPIManager.h"
 
 #include "resource.h"
 
@@ -21,6 +20,7 @@ bool MainWindow::Init(std::vector<std::unique_ptr<GPU>>&& vectorOfGPUs) {
     MainWindow::_wndClass = CreateWindowClassW(L"GPUXWinClass", MainWindow::MainWindowProc, GetStockBrush(BLACK_BRUSH), IDC_ARROW, 0, 0);
     if (MainWindow::_wndClass) {
         MainWindow::_mwClsExtra.hBrush = CreateSolidBrush(currentTheme.standartGrayColor);
+        MainWindow::_mwClsExtra.hCurrentThemeBrush = CreateSolidBrush(globalThemeColor);
         MainWindow::_mwClsExtra.hPen = CreatePen(PS_SOLID, 1, currentTheme.standartGrayColor);
         MainWindow::_mwClsExtra.hBorderPen = CreatePen(PS_SOLID, 1, globalThemeColor);
         MainWindow::_mwClsExtra.hNormalFont = CreateFontW(DPIManager::Scale(16), 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
@@ -165,7 +165,44 @@ void MainWindow::DrawGraphicsCard(HDC WindowDC) {
 }
 
 void MainWindow::DrawSensors(HDC WindowDC) {
+    const auto selIdx = ComboBox_GetCurSel(MainWindow::_curComboBox);
+    if (selIdx < 0 || selIdx >= static_cast<int>(MainWindow::_vectorOfGPUs.size())) return;
+    const auto& gpu = MainWindow::_vectorOfGPUs[selIdx];
 
+    SetBkMode(WindowDC, TRANSPARENT);
+    SetTextColor(WindowDC, currentTheme.standartWhiteColor);
+
+    auto oldPen = SelectObject(WindowDC, MainWindow::_mwClsExtra.hBorderPen);
+    auto oldFont = SelectObject(WindowDC, MainWindow::_mwClsExtra.hNormalFont);
+
+    const int startX = DPIManager::Scale(MainWindow::_mwClsExtra.startX);
+    const int labelW = DPIManager::Scale(MainWindow::_mwClsExtra.labelW);
+    const int valueW = DPIManager::Scale(90);
+    const int barW = DPIManager::Scale(180);
+    const int mmW = DPIManager::Scale(140);
+    const int rowH = DPIManager::Scale(MainWindow::_mwClsExtra.rowHeight);
+    const int gap = DPIManager::Scale(MainWindow::_mwClsExtra.gap);
+    const int rightEdge = DPIManager::Scale(MainWindow::_mwClsExtra.rightEdge);
+
+    int y = DPIManager::Scale(MainWindow::_mwClsExtra.startY);
+    auto at = [&](int x0) -> MainWindow::Row { return MainWindow::Row{ WindowDC, x0, y, rightEdge, gap }; };
+
+    at(startX).label(StringManager::GetStringByID(IDS_GPU_TEMP), labelW).value(std::to_wstring(gpu->GetCoreTemperature()) + L" °C", labelW).graphic(barW, gpu->GetCoreTemperatureHistory(), 0u, 100u);
+    y += rowH + gap;
+
+    wchar_t buf[32];
+    swprintf(buf, std::size(buf), L"%.2f V", gpu->GetCoreVoltage());
+    at(startX - 5).label(StringManager::GetStringByID(IDS_GPU_VOLT), labelW + 5).value(buf, labelW).graphic(barW, gpu->GetCoreVoltageHistory(), 0.0, 2.0);
+    y += rowH + gap;
+
+    const auto& f = gpu->GetFanSpeed();
+    for (int i = 0; i < f.size(); i++) {
+        at(startX).label(StringManager::GetStringByID(IDS_FAN) + std::to_wstring(i + 1), labelW).value(std::to_wstring(f[i]) + L" RPM", labelW).graphic(barW, gpu->GetFanSpeedHistory()[i].data(), 0u, 4000u);
+        y += rowH + gap;
+    }
+
+    SelectObject(WindowDC, oldFont);
+    SelectObject(WindowDC, oldPen);
 }
 
 LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -183,6 +220,8 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
             DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &DARK, sizeof(int));
 
         }
+
+        SetTimer(hwnd, 0, 1000, 0);
         break;
     }
     case WM_GETMINMAXINFO: {
@@ -212,6 +251,7 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
         }
         else return DefWindowProcW(hwnd, msg, wparam, lparam);
     }
+    case WM_ERASEBKGND: return 1;
     case WM_PAINT: {
         PAINTSTRUCT PS;
         HDC WindowDC = BeginPaint(hwnd, &PS);
@@ -258,6 +298,13 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
     }
     case WM_DESTROY: {
         PostQuitMessage(0);
+        break;
+    }
+    case WM_TIMER: {
+        const auto selIdx = ComboBox_GetCurSel(MainWindow::_curComboBox);
+        if (selIdx < 0 || selIdx >= static_cast<int>(MainWindow::_vectorOfGPUs.size())) break;
+        MainWindow::_vectorOfGPUs[selIdx]->UpdateSensors();
+        InvalidateRect(hwnd, 0, 1);
         break;
     }
     default: return DefWindowProcW(hwnd, msg, wparam, lparam);

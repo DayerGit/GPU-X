@@ -1,6 +1,7 @@
 #include "NVIDIA GPU.h"
 
 #include <iostream>
+#include <algorithm>
 
 NVIDIA_GPU::NVIDIA_GPU(IDXGIAdapter* pDXGIAdapter, LUID AdapterLUID, int index, VkInstance vkInstance) 
 						: GPU(pDXGIAdapter, AdapterLUID, index, vkInstance)
@@ -188,17 +189,29 @@ void NVIDIA_GPU::_FillBusInfo() {
 }
 
 void NVIDIA_GPU::_FillFanInfo() {
+	this->Fan.speedRpm.clear();
 
 	NV_GPU_CLIENT_FAN_COOLERS_STATUS status = {};
 	status.version = NV_GPU_CLIENT_FAN_COOLERS_STATUS_VER;
 
 	NvAPI_Status result = this->_NvAPI_ClientFanCoolersGetStatus(this->_physGpuHandle, &status);
-
 	if (result != NVAPI_OK) return;
 
-	for (NvU32 i = 0; i < status.count; i++) 
-		this->Fan.speedRpm.push_back(status.items[i].currentRpm);
+	if (_fanSpeedHistory.size() != status.count)
+		_fanSpeedHistory.resize(status.count);
+
+	for (NvU32 i = 0; i < status.count; i++) {
+		uint32_t currentRpm = status.items[i].currentRpm;
+		this->Fan.speedRpm.push_back(currentRpm);
+
+		auto& historyArray = _fanSpeedHistory[i];
+
+		std::memmove(historyArray.data() + 1, historyArray.data(), (GPUX_HISTORY_DEPTH - 1) * sizeof(uint32_t));
+
+		historyArray[0] = currentRpm;
+	}
 }
+
 
 std::wstring GetMemoryTypeStr(unsigned int ramType) {
 	switch (ramType) {
@@ -258,6 +271,12 @@ void NVIDIA_GPU::_FillCoreInfo() {
 
 	if (result == NVAPI_OK)
 		this->Core.voltage = status.data[9] / 1000000.0f;
+
+	std::memmove(&this->_coreTempHistory[1], &this->_coreTempHistory[0], (GPUX_HISTORY_DEPTH - 1) * sizeof(uint32_t));
+	this->_coreTempHistory[0] = this->Core.temperature;
+
+	std::memmove(&this->_coreVoltageHistory[1], &this->_coreVoltageHistory[0], (GPUX_HISTORY_DEPTH - 1) * sizeof(double));
+	this->_coreVoltageHistory[0] = this->Core.voltage;
 }
 
 void NVIDIA_GPU::_FillMemoryInfo() {

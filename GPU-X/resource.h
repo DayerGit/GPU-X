@@ -20,6 +20,9 @@
 #define IDS_RESIZABLE_BAR               116
 #define IDS_DX_SUPPORT                  117
 #define IDS_SUPPORT                     118
+#define IDS_GPU_TEMP                    119
+#define IDS_GPU_VOLT                    120
+#define IDS_FAN                         121
 
 // Next default values for new objects
 // 

@@ -53,6 +53,22 @@ void Intel_GPU::UpdateSensors() {
         this->Bus.current = ws.str();
     }
     else this->Bus.current = L"UNKNOWN";
+
+
+    if (this->_fanSpeedHistory.empty())
+        this->_fanSpeedHistory.resize(1);
+
+    auto& fanHistoryArray = this->_fanSpeedHistory[0];
+
+    std::memmove(fanHistoryArray.data() + 1, fanHistoryArray.data(), (GPUX_HISTORY_DEPTH - 1) * sizeof(uint32_t));
+
+    fanHistoryArray[0] = this->Fan.speedRpm;
+
+    std::memmove(&this->_coreTempHistory[1], &this->_coreTempHistory[0], (GPUX_HISTORY_DEPTH - 1) * sizeof(uint32_t));
+    this->_coreTempHistory[0] = this->Core.temperature;
+
+    std::memmove(&this->_coreVoltageHistory[1], &this->_coreVoltageHistory[0], (GPUX_HISTORY_DEPTH - 1) * sizeof(double));
+    this->_coreVoltageHistory[0] = this->Core.voltage;
 }
 
 bool Intel_GPU::_GetDeviceHandle() {

@@ -1,6 +1,7 @@
 #include "AMD GPU.h"
 
 #include <iostream>
+#include <algorithm>
 
 #include <pciprop.h>
 
@@ -153,10 +154,16 @@ bool AMD_GPU::_GetCurrentGeneration() {
 
 void AMD_GPU::_FillCoreVoltage() {
 	this->Core.voltage = this->_overdrive->GetCoreVoltage();
+
+	std::memmove(&this->_coreVoltageHistory[1], &this->_coreVoltageHistory[0], (GPUX_HISTORY_DEPTH - 1) * sizeof(double));
+	this->_coreVoltageHistory[0] = this->Core.voltage;
 }
 
 void AMD_GPU::_FillCoreTemp() {
 	this->Core.temperature = this->_overdrive->GetCoreTemp();
+
+	std::memmove(&this->_coreTempHistory[1], &this->_coreTempHistory[0], (GPUX_HISTORY_DEPTH - 1) * sizeof(uint32_t));
+	this->_coreTempHistory[0] = this->Core.temperature;
 }
 
 void AMD_GPU::_FillDefaultAndBoostClockInfo() {
@@ -178,8 +185,22 @@ void AMD_GPU::_FillMemoryTypeInfo() {
 }
 
 void AMD_GPU::_FillFanInfo() {
-	this->Fan.speedRpm = this->_overdrive->GetFanInfo();
+	auto currentFans = this->_overdrive->GetFanInfo();
+	this->Fan.speedRpm = currentFans;
+
+	if (_fanSpeedHistory.size() != currentFans.size())
+		_fanSpeedHistory.resize(currentFans.size());
+
+	for (size_t i = 0; i < currentFans.size(); i++) {
+		auto& historyArray = _fanSpeedHistory[i];
+
+		std::memmove(historyArray.data() + 1, historyArray.data(), (GPUX_HISTORY_DEPTH - 1) * sizeof(uint32_t));
+
+		historyArray[0] = static_cast<uint32_t>(currentFans[i]);
+	}
 }
+
+
 
 std::wstring AMD_GPU::_FormatPcieString(ULONG speed, ULONG width) {
 	if (speed == 0 || width == 0) return L"UNKNOWN";

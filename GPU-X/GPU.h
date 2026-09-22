@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
+#include <array>
 
 #include <windows.h>
 #include <setupapi.h>
@@ -47,6 +48,8 @@
 #define WGL_CONTEXT_MINOR_VERSION_ARB             0x2092
 #define WGL_CONTEXT_PROFILE_MASK_ARB              0x9126
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB          0x00000001
+
+#define GPUX_HISTORY_DEPTH 30
 
 using D3D12CreateDevice_t = HRESULT(__stdcall*)(IUnknown*, D3D_FEATURE_LEVEL, REFIID, void**);
 using DMLCreateDevice_t = HRESULT(__stdcall*)(ID3D12Device*, DML_CREATE_DEVICE_FLAGS, REFIID, void**);
@@ -102,8 +105,10 @@ public:
 	virtual std::wstring GetMemoryType() const = 0;
 
 	virtual std::vector<uint32_t> GetFanSpeed() const = 0;
+	virtual std::vector<std::array<uint32_t, GPUX_HISTORY_DEPTH>> GetFanSpeedHistory() { return this->_fanSpeedHistory; };
 
 	virtual uint32_t GetCoreTemperature() const = 0;
+	virtual uint32_t* GetCoreTemperatureHistory() { return this->_coreTempHistory; };
 	virtual uint32_t GetCoreClock() const = 0;
 	virtual uint32_t GetDefaultCoreClock() const = 0;
 	virtual uint32_t GetBoostCoreClock() const = 0;
@@ -112,6 +117,7 @@ public:
 	virtual uint32_t GetBoostMemoryClock() const = 0;
 
 	virtual double GetCoreVoltage() const = 0;
+	double* GetCoreVoltageHistory() { return this->_coreVoltageHistory; };
 
 	virtual bool GetHasCUDA() const = 0;
 	virtual bool GetHasPhysX() const = 0;
@@ -137,6 +143,10 @@ protected:
 
 	HDEVINFO _hDevInfo;
 	SP_DEVINFO_DATA _devInfoData;
+
+	uint32_t _coreTempHistory[GPUX_HISTORY_DEPTH] = { 0 };
+	double _coreVoltageHistory[GPUX_HISTORY_DEPTH] = { 0 };
+	std::vector<std::array<uint32_t, GPUX_HISTORY_DEPTH>> _fanSpeedHistory;
 
 private:
 
