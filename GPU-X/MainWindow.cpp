@@ -143,7 +143,7 @@ void MainWindow::DrawGraphicsCard(HDC WindowDC) {
     y += rowH + gap;
 
     at(startX - correction).label(StringManager::GetStringByID(IDS_RESIZABLE_BAR), labelW + correction)
-        .value(gpu->GetHasResizableBAR() ? L"Enable" : L"Disable", DPIManager::Scale(77), DPIManager::Scale(95) + gap)
+        .value(gpu->GetHasResizableBAR() ? StringManager::GetStringByID(IDS_ENABLE) : StringManager::GetStringByID(IDS_DISABLE), DPIManager::Scale(77), DPIManager::Scale(95) + gap)
         .label(StringManager::GetStringByID(IDS_DX_SUPPORT), DPIManager::Scale(95))
         .value(gpu->GetDXMaxVersion(), DPIManager::Scale(70));
     y += rowH + 3*gap;
@@ -157,7 +157,7 @@ void MainWindow::DrawGraphicsCard(HDC WindowDC) {
 
     at(startX - 4*correction + labelW + gap)
         .check(L"Vulkan", labelW, gpu->GetHasVulkan(), labelW)
-        .check(L"OpenGL 4.6", DPIManager::Scale(85), gpu->GetHasVulkan(), DPIManager::Scale(85))
+        .check(L"OpenGL 4.6", DPIManager::Scale(85), gpu->GetHasOGL4_6(), DPIManager::Scale(85))
         .check(L"DirectML", DPIManager::Scale(67), gpu->GetHasDirectML(), DPIManager::Scale(74))
         .check(L"RayTracing", DPIManager::Scale(100), gpu->GetHasRayTracing());
 
@@ -254,32 +254,44 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
     }
     case WM_ERASEBKGND: return 1;
     case WM_PAINT: {
-        PAINTSTRUCT PS;
-        HDC WindowDC = BeginPaint(hwnd, &PS);
+        PAINTSTRUCT ps;
+        HDC WindowDC = BeginPaint(hwnd, &ps);
 
-        FillRect(WindowDC, &PS.rcPaint, GetStockBrush(BLACK_BRUSH));
+        RECT rcClient;
+        GetClientRect(hwnd, &rcClient);
+        const int W = rcClient.right - rcClient.left;
+        const int H = rcClient.bottom - rcClient.top;
 
-        auto oldBrush = SelectObject(WindowDC, MainWindow::_mwClsExtra.hBrush);
-        auto oldPen = SelectObject(WindowDC, MainWindow::_mwClsExtra.hPen);
+        HDC memDC = CreateCompatibleDC(WindowDC);
+        HBITMAP memBitmap = CreateCompatibleBitmap(WindowDC, W, H);
+        HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, memBitmap);
 
-        Rectangle(WindowDC, DPIManager::Scale(5), DPIManager::Scale(TabHeight + 15), DPIManager::Scale(AppSizeX - 5), 
-            DPIManager::Scale(AppSizeY - ComboBoxHeight - 15));
+        FillRect(memDC, &rcClient, GetStockBrush(BLACK_BRUSH));
+
+        auto oldBrush = SelectObject(memDC, MainWindow::_mwClsExtra.hBrush);
+        auto oldPen = SelectObject(memDC, MainWindow::_mwClsExtra.hPen);
+
+        Rectangle(memDC, DPIManager::Scale(5), DPIManager::Scale(TabHeight + 15), DPIManager::Scale(AppSizeX - indentFromTheRightOfWindow), DPIManager::Scale(AppSizeY - ComboBoxHeight - indentFromTheBottomOfWindow - 5));
 
         switch (MainWindow::_mwClsExtra.currentTab) {
-        case 0: {
-            MainWindow::DrawGraphicsCard(WindowDC);
+        case 0:
+            MainWindow::DrawGraphicsCard(memDC); 
+            break;
+        case 1: 
+            MainWindow::DrawSensors(memDC);      
             break;
         }
-        case 1: {
-            MainWindow::DrawSensors(WindowDC);
-            break;
-        }
-        }
 
-        SelectObject(WindowDC, oldBrush);
-        SelectObject(WindowDC, oldPen);
+        SelectObject(memDC, oldBrush);
+        SelectObject(memDC, oldPen);
 
-        EndPaint(hwnd, &PS);
+        BitBlt(WindowDC, 0, 0, W, H, memDC, 0, 0, SRCCOPY);
+
+        SelectObject(memDC, oldBitmap);
+        DeleteObject(memBitmap);
+        DeleteDC(memDC);
+
+        EndPaint(hwnd, &ps);
         break;
     }
     case WM_LBUTTONDOWN: {
@@ -305,7 +317,7 @@ LRESULT WINAPI MainWindow::MainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
         const auto selIdx = ComboBox_GetCurSel(MainWindow::_curComboBox);
         if (selIdx < 0 || selIdx >= static_cast<int>(MainWindow::_vectorOfGPUs.size())) break;
         MainWindow::_vectorOfGPUs[selIdx]->UpdateSensors();
-        InvalidateRect(hwnd, 0, 1);
+        InvalidateRect(hwnd, 0, FALSE);
         break;
     }
     default: return DefWindowProcW(hwnd, msg, wparam, lparam);

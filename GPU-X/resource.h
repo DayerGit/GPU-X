@@ -24,6 +24,8 @@
 #define IDS_GPU_TEMP                    119
 #define IDS_GPU_VOLT                    120
 #define IDS_FAN                         121
+#define IDS_DISABLE                     122
+#define IDS_ENABLE                      123
 
 // Next default values for new objects
 // 

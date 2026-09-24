@@ -17,10 +17,16 @@
 
 #include "resource.h"
 
+int AppSizeY = IsWindows10OrGreater() ? 500 : 550;
+int AppSizeX = IsWindows10OrGreater() ? 400 : 410;
+
+int indentFromTheBottomOfWindow = IsWindows10OrGreater() ? 10 : 40;
+int indentFromTheRightOfWindow = IsWindows10OrGreater() ? 5 : 20;
+
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow) {
 
     DPIManager::Init();
-    StringManager::ReadStrings(21);
+    StringManager::ReadStrings(23);
 
     GetCurrentTheme();
 
@@ -47,7 +53,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
     SetWindowRgn(SensorsTabButton, SensorsTabRegion, TRUE);
 
     HWND CardsListComboBox = CreateWindowExW(0, L"GPUXComboBox", L"CardList", WS_CHILD | WS_VISIBLE, DPIManager::Scale(5), 
-        DPIManager::Scale(AppSizeY - ComboBoxHeight - 10), DPIManager::Scale(AppSizeX - 10), DPIManager::Scale(ComboBoxHeight), Window, CL_COMBOBOX, 0, 0);
+        DPIManager::Scale(AppSizeY - ComboBoxHeight - indentFromTheBottomOfWindow), DPIManager::Scale(AppSizeX - indentFromTheRightOfWindow - 5), DPIManager::Scale(ComboBoxHeight), Window, CL_COMBOBOX, 0, 0);
     MainWindow::InitCardList(CardsListComboBox);
 
     HFONT hBoldFont = CreateFontW(DPIManager::Scale(20), 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, 

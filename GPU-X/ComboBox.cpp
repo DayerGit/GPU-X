@@ -2,6 +2,7 @@
 
 #include "ComboBox.h"
 #include "WindowHelpers.h"
+#include "VersionHelper.h"
 #include "Themes.h"
 #include "Globals.h"
 #include "DPIManager.h"
@@ -23,7 +24,7 @@ bool MyComboBox::Init() {
 
         if (!MyComboBox::_cbbClsExtra.font) {
             MyComboBox::_cbbClsExtra.font = CreateFontW(DPIManager::Scale(8), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-                OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Marlett");
+                OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
         }
     }
 
@@ -87,38 +88,43 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)ccbi);
         break;
     }
+    case WM_ERASEBKGND: return 1;
     case WM_PAINT: {
         PAINTSTRUCT PS;
         HDC WindowDC = BeginPaint(hwnd, &PS);
-
-        FillRect(WindowDC, &PS.rcPaint, GetStockBrush(BLACK_BRUSH));
-
-        auto oldBrush = SelectObject(WindowDC, MyComboBox::_cbbClsExtra.brush);
-        auto oldPen = SelectObject(WindowDC, MyComboBox::_cbbClsExtra.pen);
 
         RECT rcClient;
         GetClientRect(hwnd, &rcClient);
         int windowWidth = rcClient.right - rcClient.left;
         int windowHeight = rcClient.bottom - rcClient.top;
 
-        Rectangle(WindowDC, 0, 0, windowWidth, windowHeight);
+        HDC memDC = CreateCompatibleDC(WindowDC);
+        HBITMAP memBitmap = CreateCompatibleBitmap(WindowDC, windowWidth, windowHeight);
+        HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, memBitmap);
 
-        SetTextColor(WindowDC, currentTheme.standartWhiteColor);
-        SetBkMode(WindowDC, TRANSPARENT);
+        FillRect(memDC, &rcClient, GetStockBrush(BLACK_BRUSH));
+
+        auto oldBrush = SelectObject(memDC, MyComboBox::_cbbClsExtra.brush);
+        auto oldPen = SelectObject(memDC, MyComboBox::_cbbClsExtra.pen);
+
+        Rectangle(memDC, 0, 0, windowWidth, windowHeight);
+
+        SetTextColor(memDC, currentTheme.standartWhiteColor);
+        SetBkMode(memDC, TRANSPARENT);
 
         if (windowInfo && !windowInfo->strings.empty()) {
-            SelectObject(WindowDC, windowInfo->hFont);
+            SelectObject(memDC, windowInfo->hFont);
 
             if (windowInfo->currentState == MyComboBox::ComboBoxState::Minimize) {
                 RECT rcText = rcClient;
                 rcText.left += DPIManager::Scale(indentComboBox);
                 rcText.right -= DPIManager::Scale(indentComboBox);
 
-                DrawTextW(WindowDC, windowInfo->strings[windowInfo->currentIndex].c_str(), -1, &rcText, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+                DrawTextW(memDC, windowInfo->strings[windowInfo->currentIndex].c_str(), -1, &rcText, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
-                auto oldFont = SelectObject(WindowDC, MyComboBox::_cbbClsExtra.font);
-                DrawTextW(WindowDC, L"\uE70D\0", -1, &rcText, DT_SINGLELINE | DT_RIGHT | DT_VCENTER);
-                SelectObject(WindowDC, oldFont);
+                auto oldFont = SelectObject(memDC, MyComboBox::_cbbClsExtra.font);
+                DrawTextW(memDC, IsWindows10OrGreater() ? L"\uE70D\0" : L"\u25BC", -1, &rcText, DT_SINGLELINE | DT_RIGHT | DT_VCENTER);
+                SelectObject(memDC, oldFont);
             }
             else {
                 int currentY = rcClient.bottom;
@@ -128,19 +134,19 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
                         rcClient.right - DPIManager::Scale(indentComboBox), currentY };
 
                     if (i == windowInfo->mouseOn) {
-                        auto oldBr = SelectObject(WindowDC, GetStockBrush(GRAY_BRUSH));
-                        Rectangle(WindowDC, rcItem.left - DPIManager::Scale(indentComboBox), 
+                        auto oldBr = SelectObject(memDC, GetStockBrush(GRAY_BRUSH));
+                        Rectangle(memDC, rcItem.left - DPIManager::Scale(indentComboBox),
                             rcItem.top, rcItem.right + DPIManager::Scale(indentComboBox), rcItem.bottom);
-                        SelectObject(WindowDC, oldBr);
+                        SelectObject(memDC, oldBr);
                     }
 
-                    DrawTextW(WindowDC, windowInfo->strings[i].c_str(), -1, &rcItem, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+                    DrawTextW(memDC, windowInfo->strings[i].c_str(), -1, &rcItem, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
                     if (i == windowInfo->currentIndex) {
-                        auto oldBr = SelectObject(WindowDC, MyComboBox::_cbbClsExtra.themeColorBrush);
-                        Rectangle(WindowDC, DPIManager::Scale(5), DPIManager::Scale(i * ComboBoxHeight + 10),
+                        auto oldBr = SelectObject(memDC, MyComboBox::_cbbClsExtra.themeColorBrush);
+                        Rectangle(memDC, DPIManager::Scale(5), DPIManager::Scale(i * ComboBoxHeight + 10),
                             DPIManager::Scale(10), DPIManager::Scale(i * ComboBoxHeight + 25));
-                        SelectObject(WindowDC, oldBr);
+                        SelectObject(memDC, oldBr);
                     }
 
                     currentY -= DPIManager::Scale(ComboBoxHeight);
@@ -148,8 +154,14 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
             }
         }
 
-        SelectObject(WindowDC, oldPen);
-        SelectObject(WindowDC, oldBrush);
+        SelectObject(memDC, oldPen);
+        SelectObject(memDC, oldBrush);
+
+        BitBlt(WindowDC, 0, 0, windowWidth, windowHeight, memDC, 0, 0, SRCCOPY);
+
+        SelectObject(memDC, oldBitmap);
+        DeleteObject(memBitmap);
+        DeleteDC(memDC);
 
         EndPaint(hwnd, &PS);
         break;
@@ -205,7 +217,7 @@ LRESULT WINAPI MyComboBox::ComboBoxWindowProc(HWND hwnd, UINT msg, WPARAM wparam
     }
     case WM_SETFONT: {
         if (windowInfo) windowInfo->hFont = (HFONT)wparam;
-        if (lparam) InvalidateRect(hwnd, 0, 1);
+        if (lparam) InvalidateRect(hwnd, 0, FALSE);
         break;
     }
     case CB_ADDSTRING: {

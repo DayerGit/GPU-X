@@ -44,24 +44,38 @@ LRESULT WINAPI MyButton::ButtonWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)cbi);
         break;
     }
+    case WM_ERASEBKGND: return 1;
     case WM_PAINT: {
         if (windowInfo) {
             PAINTSTRUCT PS;
             HDC WindowDC = BeginPaint(hwnd, &PS);
 
-            FillRect(WindowDC, &PS.rcPaint, 
-                    MyButton::_btnClsExtra.Brushes[MyButton::_btnClsExtra.currentActive == (int)GetMenu(hwnd) ? 0 : windowInfo->currentBrush]);
-
-            auto oldFont = SelectObject(WindowDC, windowInfo->hFont);
-
             RECT rcClient;
             GetClientRect(hwnd, &rcClient);
 
-            SetTextColor(WindowDC, currentTheme.standartWhiteColor);
-            SetBkMode(WindowDC, TRANSPARENT);
-            DrawTextW(WindowDC, windowInfo->windowName, -1, &rcClient, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+            const int Width = rcClient.right - rcClient.left;
+            const int Height = rcClient.bottom - rcClient.top;
 
-            SelectObject(WindowDC, oldFont);
+            HDC memDC = CreateCompatibleDC(WindowDC);
+            HBITMAP memBitmap = CreateCompatibleBitmap(WindowDC, Width, Height);
+            HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, memBitmap);
+
+            FillRect(memDC, &rcClient, MyButton::_btnClsExtra.Brushes[MyButton::_btnClsExtra.currentActive == (int)GetMenu(hwnd) ? 0 : windowInfo->currentBrush]);
+
+            auto oldFont = SelectObject(memDC, windowInfo->hFont);
+
+            SetTextColor(memDC, currentTheme.standartWhiteColor);
+            SetBkMode(memDC, TRANSPARENT);
+            DrawTextW(memDC, windowInfo->windowName, -1, &rcClient, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+
+            SelectObject(memDC, oldFont);
+
+            BitBlt(WindowDC, 0, 0, Width, Height, memDC, 0, 0, SRCCOPY);
+
+            SelectObject(memDC, oldBitmap);
+            DeleteObject(memBitmap);
+            DeleteDC(memDC);
+
             EndPaint(hwnd, &PS);
         }
         break;
@@ -104,7 +118,7 @@ LRESULT WINAPI MyButton::ButtonWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LP
     }
     case WM_SETFONT: {
         if (windowInfo) windowInfo->hFont = (HFONT)wparam;
-        if (lparam) InvalidateRect(hwnd, 0, 1);
+        if (lparam) InvalidateRect(hwnd, 0, FALSE);
         break;
     }
     case WM_DESTROY: {

@@ -135,6 +135,7 @@ std::wstring NVIDIA_GPU::_GetBusName(NV_GPU_BUS_TYPE busType) {
 	case NVAPI_GPU_BUS_TYPE_FPCI: return L"FPCI";
 	case NVAPI_GPU_BUS_TYPE_AXI: return L"AXI";
 	}
+	return L"N/A";
 }
 
 void NVIDIA_GPU::_FillBusInfo() {
@@ -333,6 +334,6 @@ void NVIDIA_GPU::_FillCUDAPhysXInfo() {
 }
 
 NVIDIA_GPU::~NVIDIA_GPU() {
-	if(this->_NvAPI_Unload())
+	if(this->_NvAPI_Unload)
 		this->_NvAPI_Unload();
 }

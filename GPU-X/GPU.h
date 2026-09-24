@@ -105,10 +105,10 @@ public:
 	virtual std::wstring GetMemoryType() const = 0;
 
 	virtual std::vector<uint32_t> GetFanSpeed() const = 0;
-	virtual std::vector<std::array<uint32_t, GPUX_HISTORY_DEPTH>> GetFanSpeedHistory() { return this->_fanSpeedHistory; };
+	std::vector<std::array<uint32_t, GPUX_HISTORY_DEPTH>> GetFanSpeedHistory() { return this->_fanSpeedHistory; };
 
 	virtual uint32_t GetCoreTemperature() const = 0;
-	virtual uint32_t* GetCoreTemperatureHistory() { return this->_coreTempHistory; };
+	uint32_t* GetCoreTemperatureHistory() { return this->_coreTempHistory; };
 	virtual uint32_t GetCoreClock() const = 0;
 	virtual uint32_t GetDefaultCoreClock() const = 0;
 	virtual uint32_t GetBoostCoreClock() const = 0;
@@ -122,7 +122,7 @@ public:
 	virtual bool GetHasCUDA() const = 0;
 	virtual bool GetHasPhysX() const = 0;
 	
-	~GPU();
+	virtual ~GPU();
 
 protected:
 	TypeOfGPU _whoIsMyDaddy;
